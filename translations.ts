@@ -25,7 +25,15 @@ export const TRANSLATIONS = {
         error: "Error",
         newChat: "New Chat",
         history: "History",
-        bridge: "Bridge"
+        bridge: "Bridge",
+        rename: "Rename",
+        export: "Export",
+        delete: "Delete",
+        cancel: "Cancel",
+        confirmDelete: "Are you sure you want to delete this chat?",
+        chatRenamed: "Chat renamed",
+        chatDeleted: "Chat deleted",
+        chatExported: "Chat exported"
     },
     ru: {
         appTitle: "SHUKABASE",
@@ -53,6 +61,14 @@ export const TRANSLATIONS = {
         error: "Ошибка",
         newChat: "Новый чат",
         history: "История",
-        bridge: "Мост"
+        bridge: "Мост",
+        rename: "Переименовать",
+        export: "Экспорт",
+        delete: "Удалить",
+        cancel: "Отмена",
+        confirmDelete: "Вы уверены, что хотите удалить этот чат?",
+        chatRenamed: "Чат переименован",
+        chatDeleted: "Чат удален",
+        chatExported: "Чат экспортирован"
     }
 };

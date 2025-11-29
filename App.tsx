@@ -232,6 +232,12 @@ const App: React.FC = () => {
         onSelectConversation={handleSelectConversation}
         onNewChat={handleNewChat}
         t={t}
+        onConversationsUpdate={async () => {
+          try {
+            const convos = await getConversations();
+            setConversations(convos);
+          } catch (e) { console.error("Failed to refresh conversations", e); }
+        }}
       />
 
       {/* MIDDLE PANEL: Chat Interface */}

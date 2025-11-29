@@ -51,6 +51,21 @@ export const saveConversation = async (conversation: Conversation): Promise<{ su
   }
 }
 
+export const deleteConversation = async (id: string): Promise<{ success: boolean }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/conversations/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error deleting conversation ${id}:`, error);
+    throw error;
+  }
+};
+
 export const searchScriptures = async (query: string, settings: AppSettings): Promise<SourceChunk[]> => {
   if (settings.useMockData) {
     // Mock data for demo purposes
