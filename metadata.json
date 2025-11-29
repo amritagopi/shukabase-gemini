@@ -1,0 +1,5 @@
+{
+  "name": "Shukabase AI",
+  "description": "AI-powered interface for Vaishnava scriptures using Gemini and local RAG.",
+  "requestFramePermissions": []
+}
