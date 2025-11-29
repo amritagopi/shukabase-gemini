@@ -174,9 +174,23 @@ const App: React.FC = () => {
       });
 
     } catch (error: any) {
+      console.error("Agent Error:", error);
+      let errorMsg = error.message;
+
+      // Check for quota exceeded error
+      if (
+        errorMsg.includes("429") ||
+        errorMsg.includes("RESOURCE_EXHAUSTED") ||
+        errorMsg.includes("quota")
+      ) {
+        errorMsg = t('quotaExceeded');
+      } else {
+        errorMsg = `❌ **${t('error')}**: ${errorMsg}`;
+      }
+
       const errorMessage: Message = {
         role: 'model',
-        parts: [{ text: `❌ **${t('error')}**: ${error.message}` }],
+        parts: [{ text: errorMsg }],
       };
       setActiveConversation(prev => prev ? ({ ...prev, messages: prev.messages.slice(0, -1).concat(errorMessage) }) : null);
     } finally {
@@ -500,6 +514,22 @@ const App: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Model</label>
+                <select
+                  value={settings.model}
+                  onChange={(e) => setSettings({ ...settings, model: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-amber-500 focus:outline-none appearance-none"
+                >
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                  <option value="gemini-2.0-flash-lite-preview-02-05">Gemini 2.0 Flash Lite Preview</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                  <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                  <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                </select>
+                <p className="text-xs text-slate-500">Select a different model if you hit rate limits.</p>
+              </div>
 
             </div>
 

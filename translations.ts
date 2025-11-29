@@ -33,7 +33,8 @@ export const TRANSLATIONS = {
         confirmDelete: "Are you sure you want to delete this chat?",
         chatRenamed: "Chat renamed",
         chatDeleted: "Chat deleted",
-        chatExported: "Chat exported"
+        chatExported: "Chat exported",
+        quotaExceeded: "Quota exceeded for the current model. Please switch to a different model in Settings and ask the assistant to continue."
     },
     ru: {
         appTitle: "SHUKABASE",
@@ -69,6 +70,7 @@ export const TRANSLATIONS = {
         confirmDelete: "Вы уверены, что хотите удалить этот чат?",
         chatRenamed: "Чат переименован",
         chatDeleted: "Чат удален",
-        chatExported: "Чат экспортирован"
+        chatExported: "Чат экспортирован",
+        quotaExceeded: "Лимиты на текущую модель исчерпаны. Пожалуйста, переключитесь на другую модель в настройках, после чего попросите ассистента продолжить."
     }
 };
