@@ -11,23 +11,26 @@ export interface SourceChunk {
 export interface AgentStep {
   type: 'thought' | 'action' | 'observation';
   content: string;
+  timestamp: number;
 }
 
 export interface Message {
-  id?: string;
   role: 'user' | 'model';
   parts: { text: string }[];
   timestamp?: number;
   relatedChunkIds?: string[];
+  // Добавляем это поле, чтобы хранить полные данные о стихах
+  sources?: SourceChunk[];
   isThinking?: boolean;
   agentSteps?: AgentStep[];
 }
 
-export interface Conversation {
-  id: string;
-  title: string;
-  createdAt: string;
-  messages: Message[];
+export interface AppSettings {
+  apiKey: string;
+  backendUrl: string;
+  useMockData: boolean;
+  model: string;
+  language: 'ru' | 'en';
 }
 
 export interface ConversationHeader {
@@ -36,12 +39,8 @@ export interface ConversationHeader {
   createdAt: string;
 }
 
-export interface AppSettings {
-  apiKey: string;
-  backendUrl: string;
-  useMockData: boolean;
-  model: string;
-  language: string;
+export interface Conversation extends ConversationHeader {
+  messages: Message[];
 }
 
 export type CitationClickHandler = (chunkId: string) => void;

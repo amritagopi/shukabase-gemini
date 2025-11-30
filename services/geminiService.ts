@@ -13,11 +13,6 @@ const searchChunks = async (query: string, settings: AppSettings): Promise<Sourc
     return DEMO_CHUNKS;
   }
 
-  // Real backend call to rag_api_server.py
-  // Note: settings.backendUrl might be pointing to /search, but our new robust server uses /api/search.
-  // We prefer the hardcoded API_BASE_URL logic here for consistency with other endpoints, 
-  // or we can fallback to settings.backendUrl if API_BASE_URL fails.
-  // Let's use the consistent API_BASE_URL/search endpoint.
   const searchEndpoint = `${API_BASE_URL}/search`;
 
   try {
@@ -39,7 +34,6 @@ const searchChunks = async (query: string, settings: AppSettings): Promise<Sourc
     }
     const data = await response.json();
 
-    // The backend returns { success: true, results: [...] }
     if (data.results && Array.isArray(data.results)) {
       return data.results.map((r: any) => ({
         id: `${(r.book || 'unknown').replace(/\s+/g, "").toLowerCase()}.${r.chapter}.${r.verse}`,
@@ -54,7 +48,7 @@ const searchChunks = async (query: string, settings: AppSettings): Promise<Sourc
     return [];
   } catch (e) {
     console.warn("Search failed (network or parsing error), returning empty array:", e);
-    return []; // Return empty array to prevent "not iterable" errors
+    return [];
   }
 }
 
@@ -70,7 +64,6 @@ export const generateRAGResponse = async (
     throw new Error("API Key is missing. Please check settings.");
   }
 
-  // 1. Retrieval Step (Simulated Agentic Step)
   if (onStep) onStep({ type: 'thought', content: 'Searching scriptures for context...', timestamp: Date.now() });
 
   let chunks = initialChunks;
@@ -84,7 +77,6 @@ export const generateRAGResponse = async (
 
   const client = createClient(settings.apiKey);
 
-  // Rich context formatting for Scriptures
   const contextString = chunks.map(chunk => {
     const loc = chunk.chapter && chunk.verse
       ? `Chapter ${chunk.chapter}, Verse ${chunk.verse}`
@@ -138,19 +130,15 @@ Use citation format [[ID]] for every claim.
   }
 };
 
-// --- Conversation persistence using Python Backend API ---
+// --- Conversation persistence ---
 
 export const getConversations = async (): Promise<ConversationHeader[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/conversations`);
-    if (!response.ok) {
-      console.warn(`Failed to fetch conversations: ${response.status}`);
-      return [];
-    }
-    const conversations = await response.json();
-    return conversations;
+    if (!response.ok) return [];
+    return await response.json();
   } catch (e) {
-    console.error("Failed to fetch conversations (likely backend is down):", e);
+    console.error("Failed to fetch conversations:", e);
     return [];
   }
 };
@@ -158,10 +146,7 @@ export const getConversations = async (): Promise<ConversationHeader[]> => {
 export const getConversation = async (id: string): Promise<Conversation | null> => {
   try {
     const response = await fetch(`${API_BASE_URL}/conversations/${id}`);
-    if (!response.ok) {
-      console.warn(`Failed to fetch conversation ${id}: ${response.status}`);
-      return null;
-    }
+    if (!response.ok) return null;
     return await response.json();
   } catch (e) {
     console.error(`Failed to fetch conversation ${id}:`, e);
@@ -186,9 +171,7 @@ export const deleteConversation = async (id: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/conversations/${id}`, {
       method: 'DELETE'
     });
-    if (!response.ok) {
-      throw new Error(`Failed to delete: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Failed to delete: ${response.status}`);
   } catch (e) {
     console.error("Failed to delete conversation:", e);
     throw e;
