@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Settings, BookOpen, Database, AlertCircle, Menu, X, Search, Sparkles, Server, Scroll, Globe } from 'lucide-react';
+import { Send, Settings, BookOpen, Database, AlertCircle, Scroll, Globe, Sparkles, Server, X } from 'lucide-react';
 import { Message, SourceChunk, AppSettings, Conversation, ConversationHeader } from './types';
 import { generateRAGResponse, getConversations, getConversation, saveConversation } from './services/geminiService';
-import { DEMO_CHUNKS } from './constants';
 import { ParsedContent } from './utils/citationParser';
 import ConversationHistory from './ConversationHistory';
 import { TRANSLATIONS } from './translations';
@@ -26,10 +25,14 @@ const App: React.FC = () => {
   const [highlightedSourceId, setHighlightedSourceId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [fullTextModalOpen, setFullTextModalOpen] = useState(false);
+  const [fullTextContent, setFullTextContent] = useState('');
+  const [fullTextTitle, setFullTextTitle] = useState('');
 
   // Helper for translations
   const t = (key: keyof typeof TRANSLATIONS.en) => {
     const lang = settings.language || 'en';
+    // @ts-ignore
     return TRANSLATIONS[lang][key] || TRANSLATIONS['en'][key];
   };
 
@@ -40,6 +43,7 @@ const App: React.FC = () => {
         setConversations(convos);
       } catch (error) {
         console.error("Failed to load conversations", error);
+        setConversations([]);
       }
     };
     loadConversations();
@@ -53,8 +57,6 @@ const App: React.FC = () => {
     scrollToBottom();
   }, [activeConversation?.messages]);
 
-
-
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     if (!settings.apiKey) {
@@ -67,7 +69,6 @@ const App: React.FC = () => {
     setLoading(true);
 
     const userMessage: Message = { role: 'user', parts: [{ text: userMsgContent }] };
-    // Initial thinking message with empty steps
     const thinkingMessage: Message = {
       role: 'model',
       parts: [{ text: '' }],
@@ -89,14 +90,12 @@ const App: React.FC = () => {
     }
 
     setActiveConversation(conversationToUpdate);
-    // Clear previous sources for a new query
     setCurrentSources([]);
 
-    try {
-      // We no longer pre-fetch chunks. The agent does it.
-      // const chunks = await retrieveRelevantChunks(userMsgContent);
-      // setCurrentSources(chunks);
+    // We need a local variable to track sources because state updates are asynchronous
+    let gatheredSources: SourceChunk[] = [];
 
+    try {
       const history = conversationToUpdate.messages
         .filter(m => !m.isThinking)
         .slice(-50)
@@ -104,11 +103,10 @@ const App: React.FC = () => {
 
       const responseText = await generateRAGResponse(
         userMsgContent,
-        [], // No initial chunks
+        [],
         settings,
         history,
         (step) => {
-          // onStep callback: Update the thinking message with new steps
           setActiveConversation(prev => {
             if (!prev) return null;
             const newMessages = [...prev.messages];
@@ -120,9 +118,11 @@ const App: React.FC = () => {
           });
         },
         (foundChunks) => {
-          // onSourcesFound callback: Add new sources to the sidebar
+          // Update local variable
+          gatheredSources = [...gatheredSources, ...foundChunks];
+
+          // Update UI state
           setCurrentSources(prev => {
-            // Avoid duplicates
             const existingIds = new Set(prev.map(c => c.id));
             const newUnique = foundChunks.filter(c => !existingIds.has(c.id));
             return [...prev, ...newUnique];
@@ -130,45 +130,34 @@ const App: React.FC = () => {
         }
       );
 
-      const finalBotMessage: Message = {
-        role: 'model',
-        parts: [{ text: responseText }],
-        // We can keep the steps in the final message too if we want to show the history of reasoning
-        agentSteps: conversationToUpdate.messages[conversationToUpdate.messages.length - 1].agentSteps,
-        relatedChunkIds: currentSources.map(c => c.id), // This might need to be updated with the latest currentSources
-      };
-
-      // Replace the "thinking" message with the final response
-      // Note: We need to get the latest state of agentSteps from the activeConversation/thinkingMessage
-      // But since we are inside the async function, we can't rely on state variable 'activeConversation' being perfectly up to date if we just used it.
-      // However, we updated it via setActiveConversation callback.
-      // A cleaner way is to just use the steps we collected?
-      // Actually, let's just grab the steps from the last update or trust the state update flow.
-      // For simplicity, we will just use the steps we have.
-
-      // Wait, we need to access the *latest* steps.
-      // Let's use a functional update for the final save to ensure we don't lose steps.
-
       setActiveConversation(prev => {
         if (!prev) return null;
         const msgs = [...prev.messages];
         const thinkingMsg = msgs[msgs.length - 1];
         const finalSteps = thinkingMsg.agentSteps || [];
 
+        // Deduplicate gathered sources for the message record
+        const uniqueSourceIds = Array.from(new Set(gatheredSources.map(c => c.id)));
+
         const finalMsg: Message = {
           role: 'model',
           parts: [{ text: responseText }],
           agentSteps: finalSteps,
-          relatedChunkIds: currentSources.map(c => c.id) // This might be slightly stale if currentSources update hasn't processed, but usually fine.
+          relatedChunkIds: uniqueSourceIds
         };
 
         const finalConversation = { ...prev, messages: msgs.slice(0, -1).concat(finalMsg) };
-        saveConversation(finalConversation); // Fire and forget save
+        saveConversation(finalConversation);
 
-        // Update list if new
-        if (!conversations.some(c => c.id === finalConversation.id)) {
-          setConversations(old => [{ id: finalConversation.id, title: finalConversation.title, createdAt: finalConversation.createdAt }, ...old]);
-        }
+        // Update list: remove old entry if exists, add new to top
+        setConversations(old => {
+          const filtered = old.filter(c => c.id !== finalConversation.id);
+          return [{
+            id: finalConversation.id,
+            title: finalConversation.title,
+            createdAt: finalConversation.createdAt
+          }, ...filtered];
+        });
 
         return finalConversation;
       });
@@ -177,7 +166,6 @@ const App: React.FC = () => {
       console.error("Agent Error:", error);
       let errorMsg = error.message;
 
-      // Check for quota exceeded error
       if (
         errorMsg.includes("429") ||
         errorMsg.includes("RESOURCE_EXHAUSTED") ||
@@ -202,9 +190,6 @@ const App: React.FC = () => {
     try {
       const convo = await getConversation(id);
       setActiveConversation(convo);
-      // We should probably load sources for the active conversation if we saved them,
-      // but currently we don't save sources list in conversation, only IDs.
-      // For now, we clear sources on load or we could re-fetch them if we had a bulk fetch endpoint.
       setCurrentSources([]);
     } catch (error) {
       console.error("Failed to load conversation", error);
@@ -236,10 +221,94 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleReadFull = async (chunk: SourceChunk) => {
+    try {
+      const lang = settings.language || 'en';
+      const bookMap: Record<string, string> = {
+        'Srimad-Bhagavatam': 'sb',
+        'Bhagavad-gita As It Is': 'bg',
+        'Sri Caitanya-caritamrta': 'cc',
+        'Nectar of Devotion': 'nod',
+        'Nectar of Instruction': 'noi',
+        'Teachings of Lord Caitanya': 'tqk',
+        'Sri Isopanisad': 'iso',
+        'Light of the Bhagavata': 'lob',
+        'Perfect Questions, Perfect Answers': 'pop',
+        'Path of Perfection': 'pop',
+        'Science of Self Realization': 'sc',
+        'Life Comes from Life': 'lcfl',
+        'Krishna Book': 'kb',
+        'Raja-Vidya': 'rv',
+        'Beyond Birth and Death': 'bbd',
+        'Civilization and Transcendence': 'ct',
+        'Krsna Consciousness The Matchless Gift': 'mg',
+        'Easy Journey to Other Planets': 'ej',
+        'On the Way to Krsna': 'owk',
+        'Perfection of Yoga': 'poy',
+        'Spiritual Yoga': 'sy',
+        'Transcendental Teachings of Prahlad Maharaja': 'ttpm',
+        'sb': 'sb',
+        'bg': 'bg',
+        'cc': 'cc',
+        'nod': 'nod',
+        'noi': 'noi',
+        'tqk': 'tqk',
+        'iso': 'iso',
+        'lob': 'lob',
+        'pop': 'pop',
+        'sc': 'sc',
+        'rv': 'rv',
+        'bbd': 'bbd',
+        'owk': 'owk',
+        'poy': 'poy',
+        'spl': 'spl'
+      };
+
+      let bookFolder = bookMap[chunk.bookTitle] || null;
+      let chapterPath = '';
+
+      if (chunk.chapter && typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\'))) {
+        const normalizedPath = chunk.chapter.replace(/\\/g, '/');
+        chapterPath = `/books/${lang}/${normalizedPath}`;
+      } else if (bookFolder) {
+        chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter || 1}/index.html`;
+      } else {
+        if (!bookFolder) {
+          for (const [title, folder] of Object.entries(bookMap)) {
+            if (chunk.bookTitle.includes(title) || title.includes(chunk.bookTitle)) {
+              bookFolder = folder;
+              break;
+            }
+          }
+        }
+
+        if (bookFolder) {
+          chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter || 1}/index.html`;
+        } else {
+          alert('Book folder not found for: ' + chunk.bookTitle);
+          return;
+        }
+      }
+
+      console.log("Loading full text from:", chapterPath);
+
+      const response = await fetch(chapterPath);
+      if (!response.ok) {
+        throw new Error(`Failed to load: ${response.statusText}`);
+      }
+
+      const htmlContent = await response.text();
+      setFullTextContent(htmlContent);
+      setFullTextTitle(`${chunk.bookTitle} - Chapter ${chunk.chapter || 1}`);
+      setFullTextModalOpen(true);
+    } catch (error) {
+      console.error('Error loading full text:', error);
+      alert('Could not load full text. The file may not exist.');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
-
-      {/* LEFT PANEL: Conversation History */}
       <ConversationHistory
         conversations={conversations}
         activeConversationId={activeConversation?.id || null}
@@ -254,7 +323,6 @@ const App: React.FC = () => {
         }}
       />
 
-      {/* MIDDLE PANEL: Chat Interface */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-950">
           <div className="flex items-center gap-3">
@@ -274,7 +342,7 @@ const App: React.FC = () => {
               <Globe size={14} className="text-amber-500" />
               {settings.language === 'en' ? 'EN' : 'RU'}
             </button>
-            <div className={`hidden md:flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border ${settings.useMockData ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+            <div className={`hidden md:flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border ${settings.useMockData ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'} `}>
               {settings.useMockData ? t('demoMode') : t('connected')}
             </div>
             <button
@@ -290,15 +358,14 @@ const App: React.FC = () => {
           {(activeConversation?.messages || []).map((msg, index) => (
             <div
               key={`${activeConversation?.id}-${index}`}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} `}
             >
               <div
                 className={`max-w-[95%] md:max-w-[80%] rounded-2xl px-5 py-4 shadow-xl ${msg.role === 'user'
                   ? 'bg-gradient-to-r from-amber-700 to-orange-800 text-white rounded-tr-none'
                   : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-tl-none'
-                  }`}
+                  } `}
               >
-                {/* Render Agent Steps (Thoughts/Actions) */}
                 {msg.agentSteps && msg.agentSteps.length > 0 && (
                   <div className="mb-4 space-y-2 border-b border-slate-700/50 pb-3">
                     {msg.agentSteps.map((step, idx) => (
@@ -385,9 +452,8 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT PANEL: Sources Sidebar */}
       <div
-        className={`fixed inset-y-0 right-0 z-40 w-full sm:w-96 bg-slate-950 border-l border-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-96 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed inset-y-0 right-0 z-40 w-full sm:w-96 bg-slate-950 border-l border-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-96 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'} `}
       >
         <div className="h-full flex flex-col">
           <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950">
@@ -412,12 +478,12 @@ const App: React.FC = () => {
                   key={chunk.id}
                   id={`source-${chunk.id}`}
                   className={`
-                    p-4 rounded-xl border transition-all duration-300 cursor-pointer group
+  p-4 rounded-xl border transition-all duration-300 cursor-pointer group relative
                     ${highlightedSourceId === chunk.id
                       ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
                       : 'bg-slate-900 border-slate-800 hover:border-slate-700'
                     }
-                  `}
+  `}
                   onClick={() => setHighlightedSourceId(chunk.id)}
                 >
                   <div className="flex justify-between items-start mb-2">
@@ -432,13 +498,24 @@ const App: React.FC = () => {
                   <h4 className="text-xs font-semibold text-slate-300 mb-2 font-mono flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                     {chunk.chapter && chunk.verse
-                      ? `Chapter ${chunk.chapter}, Verse ${chunk.verse}`
-                      : `Page ${chunk.pageNumber}`}
+                      ? `Chapter ${chunk.chapter}, Verse ${chunk.verse} `
+                      : `Page ${chunk.pageNumber} `}
                   </h4>
 
                   <p className="text-sm text-slate-400 leading-relaxed font-serif border-l-2 border-slate-700 pl-3 line-clamp-6 group-hover:line-clamp-none transition-all">
                     "{chunk.content}"
                   </p>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReadFull(chunk);
+                    }}
+                    className="mt-3 w-full text-xs py-2 px-3 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg transition-colors border border-slate-700 hover:border-amber-500/50 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100"
+                  >
+                    <BookOpen size={12} />
+                    {t('readFull')}
+                  </button>
                 </div>
               ))
             )}
@@ -446,7 +523,23 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Settings Modal */}
+      {fullTextModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setFullTextModalOpen(false)}>
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-slate-100">{fullTextTitle}</h3>
+              <button onClick={() => setFullTextModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X size={24} />
+              </button>
+            </div>
+            <div
+              className="flex-1 overflow-y-auto p-6 prose prose-invert prose-slate max-w-none"
+              dangerouslySetInnerHTML={{ __html: fullTextContent }}
+            />
+          </div>
+        </div>
+      )}
+
       {isSettingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
@@ -522,6 +615,7 @@ const App: React.FC = () => {
                   onChange={(e) => setSettings({ ...settings, model: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-amber-500 focus:outline-none appearance-none"
                 >
+                  <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
                   <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                   <option value="gemini-2.0-flash-lite-preview-02-05">Gemini 2.0 Flash Lite Preview</option>
                 </select>

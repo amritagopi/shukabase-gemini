@@ -8,31 +8,26 @@ export interface SourceChunk {
   score: number;
 }
 
-export interface MessagePart {
-  text: string;
-}
-
 export interface AgentStep {
   type: 'thought' | 'action' | 'observation';
   content: string;
-  timestamp: number;
 }
 
 export interface Message {
+  id?: string;
   role: 'user' | 'model';
-  parts: MessagePart[];
+  parts: { text: string }[];
   timestamp?: number;
   relatedChunkIds?: string[];
   isThinking?: boolean;
   agentSteps?: AgentStep[];
 }
 
-export interface AppSettings {
-  apiKey: string;
-  backendUrl: string;
-  useMockData: boolean;
-  model: string;
-  language: 'ru' | 'en';
+export interface Conversation {
+  id: string;
+  title: string;
+  createdAt: string;
+  messages: Message[];
 }
 
 export interface ConversationHeader {
@@ -41,8 +36,12 @@ export interface ConversationHeader {
   createdAt: string;
 }
 
-export interface Conversation extends ConversationHeader {
-  messages: Message[];
+export interface AppSettings {
+  apiKey: string;
+  backendUrl: string;
+  useMockData: boolean;
+  model: string;
+  language: string;
 }
 
 export type CitationClickHandler = (chunkId: string) => void;

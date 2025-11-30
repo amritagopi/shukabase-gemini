@@ -33,50 +33,82 @@ logger = logging.getLogger(__name__)
 
 # --- Вспомогательные классы (QueryExpander, RerankerModel) без изменений ---
 
+import difflib
+
 class QueryExpander:
-    """Расширение и переформулировка запросов"""
+    """Расширение и переформулировка запросов с поддержкой нечеткого поиска"""
     
     SYNONYMS_RU = {
-        "любовь": ["преданность", "бхакти", "дружба", "привязанность"],
-        "бог": ["кришна", "верховный", "абсолют", "божество"],
-        "душа": ["атма", "дух", "сознание", "сущность"],
-        "знание": ["джняна", "мудрость", "понимание", "осознание"],
-        "йога": ["практика", "медитация", "дисциплина", "путь"],
-        "карма": ["действие", "деяние", "следствие", "судьба"],
-        "освобождение": ["мокша", "спасение", "свобода", "выход"],
-        "мир": ["материальный", "вселенная", "временный", "преходящий"],
+        "любовь": ["преданность", "бхакти", "дружба", "привязанность", "prema"],
+        "бог": ["кришна", "верховный", "абсолют", "божество", "вишну", "нараяна", "господь"],
+        "душа": ["атма", "дух", "сознание", "сущность", "джива"],
+        "знание": ["джняна", "мудрость", "понимание", "осознание", "веда"],
+        "йога": ["практика", "медитация", "дисциплина", "путь", "садхана"],
+        "карма": ["действие", "деяние", "следствие", "судьба", "кармический"],
+        "освобождение": ["мокша", "спасение", "свобода", "выход", "нирвана"],
+        "мир": ["материальный", "вселенная", "временный", "преходящий", "майя", "иллюзия"],
+        "гуна": ["качество", "свойство", "природа", "саттва", "раджас", "тамас"],
+        "преданный": ["вайшнав", "бхакта", "слуга", "садху"],
+        "учитель": ["гуру", "наставник", "ачарья", "свами", "прабхупада"]
     }
     
     SYNONYMS_EN = {
-        "love": ["devotion", "bhakti", "affection", "attachment"],
-        "god": ["krishna", "supreme", "absolute", "deity"],
-        "soul": ["atma", "spirit", "consciousness", "essence"],
-        "knowledge": ["jnana", "wisdom", "understanding", "realization"],
-        "yoga": ["practice", "meditation", "discipline", "path"],
+        "love": ["devotion", "bhakti", "affection", "attachment", "prema"],
+        "god": ["krishna", "supreme", "absolute", "deity", "vishnu", "narayana", "lord"],
+        "soul": ["atma", "spirit", "consciousness", "essence", "jiva"],
+        "knowledge": ["jnana", "wisdom", "understanding", "realization", "veda"],
+        "yoga": ["practice", "meditation", "discipline", "path", "sadhana"],
         "karma": ["action", "deed", "consequence", "fate"],
-        "liberation": ["moksha", "salvation", "freedom", "release"],
-        "world": ["material", "universe", "temporary", "transient"],
+        "liberation": ["moksha", "salvation", "freedom", "release", "nirvana"],
+        "world": ["material", "universe", "temporary", "transient", "maya", "illusion"],
+        "mode": ["guna", "quality", "nature", "sattva", "rajas", "tamas"],
+        "devotee": ["vaishnava", "bhakta", "servant", "sadhu"],
+        "teacher": ["guru", "master", "acharya", "swami", "prabhupada"]
     }
     
     @staticmethod
+    def _fuzzy_find(term: str, collection: List[str], cutoff: float = 0.8) -> List[str]:
+        return difflib.get_close_matches(term, collection, n=1, cutoff=cutoff)
+
+    @staticmethod
     def expand_query_ru(query: str) -> List[str]:
-        expanded = [query]
-        query_lower = query.lower()
-        for term, synonyms in QueryExpander.SYNONYMS_RU.items():
-            if term in query_lower:
-                for synonym in synonyms[:2]:
-                    expanded.append(query.lower().replace(term, synonym))
-        return list(set(expanded))[:3]
+        expanded = {query}
+        query_words = query.lower().split()
+        
+        for word in query_words:
+            # 1. Check keys
+            for key, synonyms in QueryExpander.SYNONYMS_RU.items():
+                # Direct or fuzzy match with key
+                if key == word or QueryExpander._fuzzy_find(word, [key]):
+                    expanded.add(key)
+                    expanded.update(synonyms)
+                
+                # 2. Check values (synonyms)
+                # Direct or fuzzy match with any synonym
+                if word in synonyms or QueryExpander._fuzzy_find(word, synonyms):
+                    expanded.add(key)
+                    expanded.update(synonyms)
+                    
+        return list(expanded)[:5] # Limit to 5 variations to avoid token explosion
     
     @staticmethod
     def expand_query_en(query: str) -> List[str]:
-        expanded = [query]
-        query_lower = query.lower()
-        for term, synonyms in QueryExpander.SYNONYMS_EN.items():
-            if term in query_lower:
-                for synonym in synonyms[:2]:
-                    expanded.append(query.lower().replace(term, synonym))
-        return list(set(expanded))[:3]
+        expanded = {query}
+        query_words = query.lower().split()
+        
+        for word in query_words:
+            # 1. Check keys
+            for key, synonyms in QueryExpander.SYNONYMS_EN.items():
+                if key == word or QueryExpander._fuzzy_find(word, [key]):
+                    expanded.add(key)
+                    expanded.update(synonyms)
+                
+                # 2. Check values
+                if word in synonyms or QueryExpander._fuzzy_find(word, synonyms):
+                    expanded.add(key)
+                    expanded.update(synonyms)
+                    
+        return list(expanded)[:5]
 
 
 class RerankerModel:
@@ -345,20 +377,22 @@ class RAGEngine:
                 expander_method = getattr(QueryExpander, f'expand_query_{language}', None)
                 if expander_method:
                     query_variants = expander_method(query)
-            
+
             logger.info(f"   📋 Варианты запроса: {query_variants}")
-            
+
             # 2. Получение эмбеддингов для всех вариантов запроса одним батчем
             variant_embeddings = self._get_embedding(query_variants)
             logger.info(f"   🔢 Получено эмбеддингов: {variant_embeddings.shape}")
-            
+
             # 3. Векторный поиск для каждого варианта
             all_results = []
             for idx, emb in enumerate(variant_embeddings):
                 vector_results = self._search_by_vector(emb, language, top_k * 2, vector_distance_threshold)
-                logger.debug(f"   🔎 Вариант '{query_variants[idx]}': найдено {len(vector_results)} результатов")
+                logger.info(f"   🔎 Вариант '{query_variants[idx]}': найдено {len(vector_results)} результатов")
+                for res in vector_results:
+                     logger.info(f"      - Score: {res['score']:.4f}, Text preview: {res['text'][:50]}...")
                 all_results.extend(vector_results)
-            
+
             # 4. Удаление дубликатов и отбор лучших
             seen_indices = set()
             unique_results = []
@@ -366,9 +400,9 @@ class RAGEngine:
                 if res['index'] not in seen_indices:
                     seen_indices.add(res['index'])
                     unique_results.append(res)
-            
-            top_results = unique_results[:top_k]
 
+            top_results = unique_results[:top_k]
+            
             # 5. Переранжирование
             if use_reranking and self.reranker.model:
                 docs_to_rerank = [r['text'] for r in top_results]

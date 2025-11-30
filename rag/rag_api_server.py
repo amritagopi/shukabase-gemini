@@ -191,6 +191,21 @@ def save_conversation():
         logger.error(f"Error saving conversation: {e}", exc_info=True)
         return jsonify({'success': False, 'error': 'Could not save conversation'}), 500
 
+@app.route('/api/conversations/<string:conversation_id>', methods=['DELETE'])
+def delete_conversation(conversation_id):
+    """Удаляет переписку по ID."""
+    filepath = os.path.join(CHAT_HISTORY_DIR, f"{conversation_id}.json")
+    if not os.path.exists(filepath):
+        return jsonify({'success': False, 'error': 'Conversation not found'}), 404
+
+    try:
+        os.remove(filepath)
+        logger.info(f"🗑️ Conversation '{conversation_id}' deleted successfully.")
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error deleting conversation {conversation_id}: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Could not delete conversation file'}), 500
+
 
 # --- Запуск сервера ---
 if __name__ == '__main__':

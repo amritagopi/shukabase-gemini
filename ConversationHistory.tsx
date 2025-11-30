@@ -9,7 +9,7 @@ interface ConversationHistoryProps {
   onSelectConversation: (id: string) => void;
   onNewChat: () => void;
   t: (key: any) => string;
-  onConversationsUpdate?: () => void; // Callback to refresh list
+  onConversationsUpdate?: () => void;
 }
 
 const ConversationHistory: React.FC<ConversationHistoryProps> = ({
@@ -23,7 +23,6 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,41 +39,38 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     if (!editTitle.trim()) return;
     try {
       const convo = await getConversation(id);
-      const updatedConvo = { ...convo, title: editTitle };
-      await saveConversation(updatedConvo);
-      setEditingId(null);
-      setMenuOpenId(null);
-      if (onConversationsUpdate) onConversationsUpdate();
+      if (convo) {
+        const updatedConvo = { ...convo, title: editTitle };
+        await saveConversation(updatedConvo);
+        setEditingId(null);
+        setMenuOpenId(null);
+        if (onConversationsUpdate) onConversationsUpdate();
+      }
     } catch (error) {
       console.error("Failed to rename", error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      // We need a delete function in geminiService, let's assume it exists or we implement it
-      // For now, we will just filter it out locally if we can't delete on backend easily without endpoint
-      // But let's try to call a delete endpoint if we had one. 
-      // Since we don't have a delete endpoint in the viewed code, we might need to add it to geminiService.ts first.
-      // Wait, I can't modify geminiService in this step easily without context.
-      // Let's assume we will add it.
-      await deleteConversation(id);
-      setDeleteConfirmId(null);
-      setMenuOpenId(null);
-      if (activeConversationId === id) {
-        onNewChat();
+    if (window.confirm(t('confirmDelete'))) {
+      try {
+        await deleteConversation(id);
+        setMenuOpenId(null);
+        if (activeConversationId === id) {
+          onNewChat();
+        }
+        if (onConversationsUpdate) onConversationsUpdate();
+      } catch (error) {
+        console.error("Failed to delete", error);
       }
-      if (onConversationsUpdate) onConversationsUpdate();
-    } catch (error) {
-      console.error("Failed to delete", error);
     }
   };
 
   const handleExport = async (id: string) => {
     try {
       const convo = await getConversation(id);
+      if (!convo) return;
 
-      // Generate HTML content
       const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -114,7 +110,6 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
       `).join('');
         }
 
-        // Basic markdown-like parsing for bold text
         let text = msg.parts[0].text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
         return `
@@ -174,14 +169,6 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                 <button onClick={() => handleRename(convo.id)} className="text-emerald-500 hover:text-emerald-400"><Check size={16} /></button>
                 <button onClick={() => setEditingId(null)} className="text-slate-500 hover:text-slate-400"><X size={16} /></button>
               </div>
-            ) : deleteConfirmId === convo.id ? (
-              <div className="p-3 bg-red-900/20 border border-red-900/50 rounded-lg flex flex-col gap-2">
-                <p className="text-xs text-red-300">{t('confirmDelete')}</p>
-                <div className="flex gap-2 justify-end">
-                  <button onClick={() => setDeleteConfirmId(null)} className="text-xs text-slate-400 hover:text-white px-2 py-1">{t('cancel')}</button>
-                  <button onClick={() => handleDelete(convo.id)} className="text-xs bg-red-900/50 hover:bg-red-800 text-red-200 px-2 py-1 rounded">{t('delete')}</button>
-                </div>
-              </div>
             ) : (
               <div
                 className={`
@@ -224,7 +211,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                     </button>
                     <div className="h-px bg-slate-800 my-0.5"></div>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(convo.id); setMenuOpenId(null); }}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(convo.id); }}
                       className="w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-red-900/20 flex items-center gap-2"
                     >
                       <Trash2 size={14} /> {t('delete')}

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>RAG API Test</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Тест RAG API</h1>
+        <p>Этот тест проверяет работу RAG API напрямую из браузера</p>
+
+        <button onclick="testAPI()">🚀 Запустить тест</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '⏳ Выполняется тест...\n\n';
+
+            try {
+                // Test 1: API availability
+                resultsDiv.innerHTML += '1️⃣ Проверка доступности API...\n';
+                const healthCheck = await fetch('http://localhost:5000/');
+                resultsDiv.innerHTML += `   ✅ API доступен: ${healthCheck.status}\n\n`;
+
+                // Test 2: Search
+                resultsDiv.innerHTML += '2️⃣ Отправка поискового запроса...\n';
+                const searchResponse = await fetch('http://localhost:5000/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: 'Гададхара Пандит',
+                        language: 'ru',
+                        top_k: 5
+                    })
+                });
+
+                resultsDiv.innerHTML += `   Статус: ${searchResponse.status}\n`;
+
+                if (searchResponse.ok) {
+                    const data = await searchResponse.json();
+
+                    resultsDiv.innerHTML += `\n3️⃣ Результаты:\n`;
+                    resultsDiv.innerHTML += `   Success: ${data.success}\n`;
+                    resultsDiv.innerHTML += `   Количество результатов: ${data.results?.length || 0}\n`;
+
+                    if (data.results && data.results.length > 0) {
+                        resultsDiv.innerHTML += `\n4️⃣ Первый результат:\n`;
+                        const first = data.results[0];
+                        resultsDiv.innerHTML += `   Book: ${first.book}\n`;
+                        resultsDiv.innerHTML += `   Chapter: ${first.chapter}\n`;
+                        resultsDiv.innerHTML += `   Verse: ${first.verse || 'N/A'}\n`;
+                        resultsDiv.innerHTML += `   Score: ${first.final_score || first.score}\n`;
+                        resultsDiv.innerHTML += `   Text (первые 200 символов):\n   ${first.text?.substring(0, 200)}...\n`;
+
+                        resultsDiv.innerHTML += `\n5️⃣ Все результаты:\n`;
+                        data.results.forEach((r, i) => {
+                            resultsDiv.innerHTML += `   ${i + 1}. ${r.book} ${r.chapter} (score: ${r.final_score || r.score})\n`;
+                        });
+
+                        resultsDiv.innerHTML += `\n✅ Тест успешно завершён!\n`;
+                        resultsDiv.innerHTML += `\nФронтенд должен получать эти же данные.\n`;
+                        resultsDiv.innerHTML += `Откройте консоль браузера (F12) в основном приложении\n`;
+                        resultsDiv.innerHTML += `и проверьте логи "🔍 RAG Search Response"`;
+                    } else {
+                        resultsDiv.innerHTML += `\n⚠️ Результаты пусты!\n`;
+                    }
+                } else {
+                    const errorText = await searchResponse.text();
+                    resultsDiv.innerHTML += `\n❌ Ошибка: ${errorText}\n`;
+                }
+
+            } catch (error) {
+                resultsDiv.innerHTML += `\n❌ Ошибка: ${error.message}\n`;
+                resultsDiv.innerHTML += `\nВозможные причины:\n`;
+                resultsDiv.innerHTML += `- RAG API сервер не запущен\n`;
+                resultsDiv.innerHTML += `- Проблемы с CORS\n`;
+                resultsDiv.innerHTML += `- Неверный URL API\n`;
+            }
+        }
+    </script>
+</body>
+
+</html>

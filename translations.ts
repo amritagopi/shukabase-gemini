@@ -34,7 +34,8 @@ export const TRANSLATIONS = {
         chatRenamed: "Chat renamed",
         chatDeleted: "Chat deleted",
         chatExported: "Chat exported",
-        quotaExceeded: "Quota exceeded for the current model. Please switch to a different model in Settings and ask the assistant to continue."
+        quotaExceeded: "Quota exceeded for the current model. Please switch to a different model in Settings and ask the assistant to continue.",
+        readFull: "Read Full"
     },
     ru: {
         appTitle: "SHUKABASE",
@@ -71,6 +72,7 @@ export const TRANSLATIONS = {
         chatRenamed: "Чат переименован",
         chatDeleted: "Чат удален",
         chatExported: "Чат экспортирован",
-        quotaExceeded: "Лимиты на текущую модель исчерпаны. Пожалуйста, переключитесь на другую модель в настройках, после чего попросите ассистента продолжить."
+        quotaExceeded: "Лимиты на текущую модель исчерпаны. Пожалуйста, переключитесь на другую модель в настройках, после чего попросите ассистента продолжить.",
+        readFull: "Читать полностью"
     }
 };
