@@ -1,0 +1,126 @@
+{
+  "id": "1764631393272-d7lhq2tpp",
+  "title": "Привет! Что такое саттва?",
+  "createdAt": "2025-12-01T23:23:13.272Z",
+  "messages": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Привет! Что такое саттва?"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "К сожалению, в текущей базе данных нет информации, определяющей понятие \"саттва\" или связанные с ним термины, такие как \"гуны\" или \"три гуны\"."
+        }
+      ],
+      "agentSteps": [
+        {
+          "type": "thought",
+          "content": "The user is asking for the definition of \"sattva\". I should search the database for this term.",
+          "timestamp": 1764631394737
+        },
+        {
+          "type": "thought",
+          "content": "The user is asking for the definition of \"sattva\". I should search the database for this term.",
+          "timestamp": 1764631394737
+        },
+        {
+          "type": "action",
+          "content": "Searching for: \"саттва\"",
+          "timestamp": 1764631394737
+        },
+        {
+          "type": "action",
+          "content": "Searching for: \"саттва\"",
+          "timestamp": 1764631394737
+        },
+        {
+          "type": "observation",
+          "content": "Found 0 results.",
+          "timestamp": 1764631395088
+        },
+        {
+          "type": "observation",
+          "content": "Found 0 results.",
+          "timestamp": 1764631395088
+        },
+        {
+          "type": "thought",
+          "content": "The initial search for \"саттва\" did not yield results. This term is often associated with Indian philosophy, particularly the Samkhya and Yoga traditions, and the concept of the three gunas. I will try searching for \"гуны\" and \"три гуны\" to see if I can find information related to sattva.",
+          "timestamp": 1764631396269
+        },
+        {
+          "type": "thought",
+          "content": "The initial search for \"саттва\" did not yield results. This term is often associated with Indian philosophy, particularly the Samkhya and Yoga traditions, and the concept of the three gunas. I will try searching for \"гуны\" and \"три гуны\" to see if I can find information related to sattva.",
+          "timestamp": 1764631396269
+        },
+        {
+          "type": "action",
+          "content": "Searching for: \"гуны\"",
+          "timestamp": 1764631396269
+        },
+        {
+          "type": "action",
+          "content": "Searching for: \"гуны\"",
+          "timestamp": 1764631396269
+        },
+        {
+          "type": "observation",
+          "content": "Found 0 results.",
+          "timestamp": 1764631396283
+        },
+        {
+          "type": "observation",
+          "content": "Found 0 results.",
+          "timestamp": 1764631396283
+        },
+        {
+          "type": "thought",
+          "content": "Searching for \"гуны\" also did not yield results. I will try a more specific search for \"три гуны\" which is a common concept.",
+          "timestamp": 1764631397437
+        },
+        {
+          "type": "thought",
+          "content": "Searching for \"гуны\" also did not yield results. I will try a more specific search for \"три гуны\" which is a common concept.",
+          "timestamp": 1764631397437
+        },
+        {
+          "type": "action",
+          "content": "Searching for: \"три гуны\"",
+          "timestamp": 1764631397437
+        },
+        {
+          "type": "action",
+          "content": "Searching for: \"три гуны\"",
+          "timestamp": 1764631397437
+        },
+        {
+          "type": "observation",
+          "content": "Found 0 results.",
+          "timestamp": 1764631397752
+        },
+        {
+          "type": "observation",
+          "content": "Found 0 results.",
+          "timestamp": 1764631397752
+        },
+        {
+          "type": "thought",
+          "content": "I have tried searching for \"саттва\", \"гуны\", and \"три гуны\" without success. It's possible the database does not contain information on this specific philosophical concept, or the terms used in the database are different. Since I cannot find direct definitions, I will state that the information is not available in the current database.",
+          "timestamp": 1764631399658
+        },
+        {
+          "type": "thought",
+          "content": "I have tried searching for \"саттва\", \"гуны\", and \"три гуны\" without success. It's possible the database does not contain information on this specific philosophical concept, or the terms used in the database are different. Since I cannot find direct definitions, I will state that the information is not available in the current database.",
+          "timestamp": 1764631399658
+        }
+      ],
+      "sources": []
+    }
+  ]
+}
