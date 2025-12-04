@@ -11,6 +11,11 @@
 body {
   background-color: #020617;
   /* Even darker slate for contrast */
+  background-image: url('/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: #e2e8f0;
   overflow: hidden;
   /* Prevent body scroll */
