@@ -181,6 +181,13 @@ For the purport (commentary):
 
 Then provide your own analysis without special formatting.
 
+NO DUPLICATION RULE (CRITICAL):
+- In your Final Answer, NEVER quote the same verse/text/book reference more than once.
+- If you found the same content multiple times in different searches, cite it only ONCE.
+- Each [[ID]] citation should appear only ONCE in your response.
+- Check your scratchpad for previously cited sources before adding a new citation.
+- Synthesize information from duplicate findings, don't repeat them.
+
 LANGUAGE RULES:
 - **Output Language:** The \`Final Answer\` MUST be in the same language as the user's query.
   - User Russian -> Final Answer Russian.
