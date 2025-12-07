@@ -612,8 +612,8 @@ const App: React.FC = () => {
             <div className="flex-1 flex flex-col h-full min-w-0 relative">
                 <header className="h-16 glass-header flex items-center justify-between px-6 z-20">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-                            <Scroll className="text-white" size={18} />
+                        <div className="w-15 h-15 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shadow-lg">
+                            <img src="/logo192.png" alt="Logo" className="w-14 h-14 object-contain" />
                         </div>
                         <div>
                             <h1 className="font-bold text-lg tracking-tight text-slate-100 glow-text-cyan">{t('appTitle')}</h1>
