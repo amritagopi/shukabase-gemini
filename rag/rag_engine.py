@@ -189,12 +189,15 @@ class RAGEngine:
         """Загружает и настраивает ключ API для Gemini."""
         load_dotenv()
         api_key = os.environ.get('GEMINI_API_KEY')
+        self.current_api_key = None
+        
         if not api_key:
             logger.warning("⚠️ Переменная окружения GEMINI_API_KEY не найдена. RAG будет работать в ограниченном режиме.")
             return
 
         try:
             genai.configure(api_key=api_key)
+            self.current_api_key = api_key
             logger.info("✅ Ключ Gemini API успешно сконфигурирован.")
         except Exception as e:
             logger.error(f"❌ Ошибка при конфигурации Gemini API: {e}")
@@ -306,11 +309,12 @@ class RAGEngine:
 
     def _get_embedding(self, texts: List[str], api_key: str = None) -> np.ndarray:
         """Получает эмбеддинги для списка текстов с помощью Gemini API."""
-        if api_key:
+        if api_key and api_key != self.current_api_key:
             try:
                 masked_key = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 8 else "***"
                 logger.info(f"🔑 Using dynamic API key: {masked_key}")
                 genai.configure(api_key=api_key)
+                self.current_api_key = api_key
             except Exception as e:
                 logger.error(f"Error configuring API key: {e}")
 

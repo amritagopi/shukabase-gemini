@@ -50,7 +50,7 @@ const MarkdownRenderer: React.FC<{
               li: ({ children }) => <li className="ml-2">{children}</li>,
               strong: ({ children }) => <strong className={`font-bold ${isBlock ? 'text-inherit' : 'text-slate-100'}`}>{children}</strong>,
               em: ({ children }) => <em className={`italic ${isBlock ? 'text-inherit opacity-90' : 'text-slate-300'}`}>{children}</em>,
-              code: ({ children }) => <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono text-amber-400">{children}</code>,
+              code: ({ children }) => <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono text-cyan-400">{children}</code>,
               pre: ({ children }) => <pre className="bg-slate-950 p-3 rounded-lg overflow-x-auto mb-2 border border-slate-700">{children}</pre>,
               blockquote: ({ children }) => <div className="pl-0">{children}</div>
             }}
@@ -164,8 +164,8 @@ export const ParsedContent: React.FC<ParsedContentProps> = ({
       {blocks.map((block, idx) => {
         if (block.type === 'verse') {
           return (
-            <div key={idx} className="my-4 rounded-lg overflow-hidden border-l-4 border-amber-500 bg-gradient-to-br from-[#fff7ed] to-[#ffedd5] text-[#78350f] shadow-sm">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-amber-500/10 bg-amber-500/5">
+            <div key={idx} className="my-4 rounded-lg overflow-hidden border-l-4 border-cyan-500 bg-cyan-900/20 text-cyan-100 shadow-sm backdrop-blur-sm">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-cyan-500/20 bg-cyan-500/10">
                 <div className="font-bold flex items-center gap-2">
                   <span>📖</span>
                   {block.title}
@@ -184,8 +184,8 @@ export const ParsedContent: React.FC<ParsedContentProps> = ({
           );
         } else if (block.type === 'purport') {
           return (
-            <div key={idx} className="my-4 rounded-lg overflow-hidden border-l-4 border-violet-500 bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] text-[#4c1d95] shadow-sm">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-violet-500/10 bg-violet-500/5">
+            <div key={idx} className="my-4 rounded-lg overflow-hidden border-l-4 border-sky-500 bg-sky-900/20 text-sky-100 shadow-sm backdrop-blur-sm">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-sky-500/20 bg-sky-500/10">
                 <div className="font-bold flex items-center gap-2">
                   <span>💬</span>
                   {block.title}

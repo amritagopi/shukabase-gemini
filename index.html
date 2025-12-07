@@ -32,10 +32,10 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #0f172a;
-      /* Slate 900 */
-      color: #e2e8f0;
-      /* Slate 200 */
+      background-color: #000000;
+      /* Deep Black */
+      color: #f1f5f9;
+      /* Slate 100 */
     }
 
     /* Custom Scrollbar */
@@ -45,23 +45,24 @@
     }
 
     ::-webkit-scrollbar-track {
-      background: #1e293b;
+      background: transparent;
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #475569;
+      background: #7c7c7c;
       border-radius: 4px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background: #64748b;
+      background: #a3a3a3;
     }
 
     .citation-link {
       cursor: pointer;
-      color: #818cf8;
+      color: #22d3ee;
+      /* Cyan 400 */
       font-weight: 500;
-      background: rgba(99, 102, 241, 0.1);
+      background: rgba(34, 211, 238, 0.15);
       padding: 0 4px;
       border-radius: 4px;
       transition: all 0.2s;
@@ -71,18 +72,35 @@
     }
 
     .citation-link:hover {
-      background: rgba(99, 102, 241, 0.2);
+      background: rgba(34, 211, 238, 0.25);
       text-decoration: underline;
+      box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
     }
 
     .markdown-body p {
       margin-bottom: 1rem;
       line-height: 1.6;
     }
+
+    #video-bg {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      z-index: -1;
+      object-fit: cover;
+    }
   </style>
 </head>
 
 <body>
+  <video autoplay loop muted playsinline id="video-bg">
+    <source src="/background.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

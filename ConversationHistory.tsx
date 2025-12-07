@@ -141,11 +141,11 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   };
 
   return (
-    <div className="w-80 bg-slate-950 border-r border-slate-800 flex flex-col h-full hidden md:flex">
-      <div className="p-4 border-b border-slate-800">
+    <div className="w-80 bg-black/40 backdrop-blur-md border-r border-slate-800/50 flex flex-col h-full hidden md:flex">
+      <div className="p-4 border-b border-slate-800/50">
         <button
           onClick={onNewChat}
-          className="w-full flex items-center justify-center gap-2 bg-amber-700 hover:bg-amber-600 text-white py-3 rounded-xl transition-all shadow-lg shadow-amber-900/20 font-medium"
+          className="w-full flex items-center justify-center gap-2 bg-cyan-600/80 hover:bg-cyan-500/80 text-white py-3 rounded-xl transition-all shadow-lg shadow-cyan-900/20 font-medium border border-cyan-500/20 backdrop-blur-sm"
         >
           <Plus size={20} />
           {t('newChat')}
@@ -157,7 +157,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
         {conversations.map((convo) => (
           <div key={convo.id} className="relative group">
             {editingId === convo.id ? (
-              <div className="flex items-center gap-1 p-2 bg-slate-800 rounded-lg border border-amber-500/50">
+              <div className="flex items-center gap-1 p-2 bg-slate-800/80 rounded-lg border border-cyan-500/50">
                 <input
                   type="text"
                   value={editTitle}
@@ -174,13 +174,13 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                 className={`
                   flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all group relative
                   ${activeConversationId === convo.id
-                    ? 'bg-slate-800 text-slate-100 shadow-md border border-slate-700'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                    ? 'bg-cyan-950/40 text-cyan-100 shadow-md border border-cyan-500/30'
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                   }
                 `}
                 onClick={() => onSelectConversation(convo.id)}
               >
-                <MessageSquare size={18} className={activeConversationId === convo.id ? 'text-amber-500' : 'opacity-50'} />
+                <MessageSquare size={18} className={activeConversationId === convo.id ? 'text-cyan-400' : 'opacity-50'} />
                 <div className="flex-1 truncate text-sm font-medium">
                   {convo.title}
                 </div>

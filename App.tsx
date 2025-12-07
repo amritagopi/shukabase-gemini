@@ -60,20 +60,20 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center h-screen bg-[#0f1117] text-white p-8 relative overflow-hidden">
+        <div className="flex flex-col items-center justify-center h-screen bg-black/80 backdrop-blur-sm text-white p-8 relative overflow-hidden">
             <div className="absolute inset-0 -z-10 overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full animate-pulse"
-                    style={{ background: 'radial-gradient(circle, rgba(88, 28, 135, 0.2) 0%, rgba(88, 28, 135, 0) 60%)' }}></div>
+                    style={{ background: 'radial-gradient(circle, rgba(28, 110, 135, 0.2) 0%, rgba(28, 122, 135, 0) 60%)' }}></div>
                 <div className="absolute bottom-[-500px] right-[-500px] w-[1200px] h-[1200px] animate-pulse"
-                    style={{ background: 'radial-gradient(circle, rgba(180, 83, 9, 0.15) 0%, rgba(180, 83, 9, 0) 60%)', animationDelay: '2s' }}></div>
+                    style={{ background: 'radial-gradient(circle, rgba(9, 26, 180, 0.15) 0%, rgba(9, 26, 180, 0) 60%)', animationDelay: '2s' }}></div>
             </div>
 
             <div className="max-w-md w-full glass-panel rounded-xl p-8 shadow-2xl border border-slate-700/50 relative z-10">
                 <div className="text-center mb-8">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-500/20 to-purple-600/20 rounded-full flex items-center justify-center border border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-full flex items-center justify-center border border-cyan-500/30 shadow-[0_0_20px_rgba(34,211,238,0.2)]">
                         <img src="/parrot.png" alt="Shuka" className="w-16 h-16 object-contain" />
                     </div>
-                    <h1 className="text-3xl font-bold glow-text-amber mb-2">
+                    <h1 className="text-3xl font-bold glow-text-cyan mb-2">
                         Shukabase AI
                     </h1>
                     <p className="text-slate-400 text-sm">First Run Setup</p>
@@ -88,9 +88,9 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                         <div className="grid grid-cols-1 gap-3">
                             <button
                                 onClick={() => startDownload('all')}
-                                className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-amber-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
+                                className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
                             >
-                                <Globe className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform" />
+                                <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
                                 <span>Multilingual (RU + EN)</span>
                             </button>
                         </div>
@@ -113,12 +113,12 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                         <div className="relative pt-1">
                             <div className="flex mb-2 items-center justify-between">
                                 <div>
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
                                         Progress
                                     </span>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-[10px] font-bold text-amber-500">
+                                    <span className="text-[10px] font-bold text-cyan-400">
                                         {progress}%
                                     </span>
                                 </div>
@@ -126,7 +126,7 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                             <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-slate-800">
                                 <div
                                     style={{ width: `${progress}%` }}
-                                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-amber-500 to-orange-600 transition-all duration-500"
+                                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-cyan-500 to-blue-600 transition-all duration-500"
                                 ></div>
                             </div>
                         </div>
@@ -555,7 +555,7 @@ const App: React.FC = () => {
 
     if (appMode === 'loading') {
         return (
-            <div className="flex flex-col items-center justify-center h-screen bg-[#0f1117] text-white p-4 text-center">
+            <div className="flex flex-col items-center justify-center h-screen bg-transparent text-white p-4 text-center">
                 {connectionError ? (
                     <div className="max-w-md bg-red-900/20 border border-red-500/50 p-6 rounded-xl animate-fade-in">
                         <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
@@ -573,7 +573,7 @@ const App: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mb-4"></div>
                         <p className="text-slate-400 animate-pulse">Starting Shukabase Server...</p>
                     </>
                 )}
@@ -589,9 +589,9 @@ const App: React.FC = () => {
         <div className="flex h-screen w-screen overflow-hidden bg-gradient-to-br from-purple-900/10 via-transparent to-orange-900/10">
             <div className="absolute inset-0 -z-10 overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full animate-pulse"
-                    style={{ background: 'radial-gradient(circle, rgba(88, 28, 135, 0.2) 0%, rgba(88, 28, 135, 0) 60%)' }}></div>
+                    style={{ background: 'radial-gradient(circle, rgba(28, 105, 135, 0.2) 0%, rgba(28, 105, 135, 0) 60%)' }}></div>
                 <div className="absolute bottom-[-500px] right-[-500px] w-[1200px] h-[1200px] animate-pulse"
-                    style={{ background: 'radial-gradient(circle, rgba(180, 83, 9, 0.15) 0%, rgba(180, 83, 9, 0) 60%)', animationDelay: '2s' }}></div>
+                    style={{ background: 'radial-gradient(circle, rgba(9, 26, 180, 0.15) 0%, rgba(9, 26, 180, 0) 60%)', animationDelay: '2s' }}></div>
 
             </div>
 
@@ -612,20 +612,20 @@ const App: React.FC = () => {
             <div className="flex-1 flex flex-col h-full min-w-0 relative">
                 <header className="h-16 glass-header flex items-center justify-between px-6 z-20">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.3)]">
                             <Scroll className="text-white" size={18} />
                         </div>
                         <div>
-                            <h1 className="font-bold text-lg tracking-tight text-slate-100 glow-text-amber">{t('appTitle')}</h1>
+                            <h1 className="font-bold text-lg tracking-tight text-slate-100 glow-text-cyan">{t('appTitle')}</h1>
                             <p className="text-xs text-slate-500">{t('appSubtitle')}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={toggleLanguage}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-xs font-bold uppercase tracking-wider text-slate-300 transition-colors border border-slate-700 hover:border-amber-500/30"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-xs font-bold uppercase tracking-wider text-slate-300 transition-colors border border-slate-700 hover:border-cyan-500/30"
                         >
-                            <Globe size={14} className="text-amber-500" />
+                            <Globe size={14} className="text-cyan-400" />
                             {settings.language === 'en' ? 'EN' : 'RU'}
                         </button>
                         <button
@@ -638,25 +638,41 @@ const App: React.FC = () => {
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth">
-                    {(activeConversation?.messages || []).map((msg, index) => (
-                        <div key={`${activeConversation?.id}-${index}`}>
-                            <ParsedContent content={msg.content} onCitationClick={handleCitationClick} t={t} />
-                        </div>
-                    ))}
+                    {(activeConversation?.messages || []).map((msg, index) => {
+                        const isUser = msg.role === 'user';
+                        return (
+                            <div
+                                key={`${activeConversation?.id}-${index}`}
+                                className={`flex w-full mb-6 ${isUser ? 'justify-end' : 'justify-start'}`}
+                            >
+                                <div
+                                    className={`
+                                        relative max-w-[85%] md:max-w-[75%] p-6 rounded-3xl backdrop-blur-md shadow-lg border
+                                        ${isUser
+                                            ? 'bg-black/40 border-slate-700/50 text-slate-100 rounded-tr-sm'
+                                            : 'bg-slate-900/30 border-cyan-500/20 text-slate-100 rounded-tl-sm shadow-[0_4px_20px_rgba(0,0,0,0.2)]'
+                                        }
+                                    `}
+                                >
+                                    <ParsedContent content={msg.content} onCitationClick={handleCitationClick} t={t} />
+                                </div>
+                            </div>
+                        );
+                    })}
                     {loading && (
                         <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
                             <div className="relative w-24 h-24 mb-6">
-                                <div className="absolute inset-0 bg-amber-500/20 rounded-full animate-ping"></div>
+                                <div className="absolute inset-0 bg-cyan-400/20 rounded-full animate-ping"></div>
                                 <img
                                     src="/parrot.png"
                                     alt="Shukabase Logo"
-                                    className="w-24 h-24 relative z-10 object-contain drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]"
+                                    className="w-24 h-24 relative z-10 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]"
                                 />
                             </div>
-                            <div className="flex items-center gap-3 text-amber-500 font-medium">
-                                <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-                                <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                            <div className="flex items-center gap-3 text-cyan-400 font-medium">
+                                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                                 <span className="ml-2 tracking-widest uppercase text-xs opacity-80">{t('agentThinking')}</span>
                             </div>
                         </div>
@@ -664,30 +680,30 @@ const App: React.FC = () => {
                     {!activeConversation && !loading && (
                         <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-0 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
                             <div className="w-32 h-32 mb-8 relative group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-purple-600/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-700"></div>
+                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-700"></div>
                                 <img
                                     src="/parrot.png"
                                     alt="Shukabase Logo"
-                                    className="w-full h-full relative z-10 object-contain drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]"
+                                    className="w-full h-full relative z-10 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]"
                                 />
                             </div>
-                            <h2 className="text-3xl font-bold mb-3 glow-text-amber tracking-tight">{t('welcomeTitle')}</h2>
+                            <h2 className="text-3xl font-bold mb-3 glow-text-cyan tracking-tight">{t('welcomeTitle')}</h2>
                             <p className="text-lg text-slate-400">{t('welcomeText')}</p>
                         </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-4 border-t border-slate-800/50 bg-slate-900/60 backdrop-blur-md z-20">
+                <div className="p-4 border-t border-slate-800/50 bg-black/40 backdrop-blur-md z-20">
                     <div className="max-w-4xl mx-auto relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-purple-600 rounded-xl opacity-20 group-hover:opacity-40 transition duration-500 blur"></div>
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-xl opacity-20 group-hover:opacity-40 transition duration-500 blur"></div>
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !loading && handleSend()}
                             placeholder={t('inputPlaceholder')}
-                            className="relative w-full bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-500 rounded-xl pl-4 pr-12 py-3.5 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all shadow-lg"
+                            className="relative w-full bg-slate-950/60 border border-slate-800 text-slate-100 placeholder-slate-500 rounded-xl pl-4 pr-12 py-3.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all shadow-lg"
                             disabled={loading}
                         />
 
@@ -703,7 +719,7 @@ const App: React.FC = () => {
                             <button
                                 onClick={handleSend}
                                 disabled={!input.trim()}
-                                className="absolute right-2 top-2 p-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-900/20"
+                                className="absolute right-2 top-2 p-1.5 bg-gradient-to-r from-cyan-600 to-teal-600 text-white rounded-lg hover:from-cyan-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-cyan-900/20"
                             >
                                 <Send size={18} />
                             </button>
@@ -713,27 +729,27 @@ const App: React.FC = () => {
             </div>
 
             <div
-                className={`fixed inset-y-0 right-0 z-40 w-full sm:w-96 glass-panel border-l border-slate-800/50 shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-96 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'} `}
+                className={`fixed inset-y-0 right-0 z-40 w-full sm:w-96 glass-panel border-l border-slate-800/50 shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-96 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'} bg-black/40 backdrop-blur-md`}
             >
                 <div className="h-full flex flex-col">
-                    <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800/50 bg-slate-950/30">
+                    <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800/50 bg-black/20">
                         <div className="flex gap-4 w-full">
                             <button
                                 onClick={() => setSidebarMode('context')}
-                                className={`relative flex-1 py-4 text-sm font-medium transition-colors ${sidebarMode === 'context' ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'}`}
+                                className={`relative flex-1 py-4 text-sm font-medium transition-colors ${sidebarMode === 'context' ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'}`}
                             >
                                 {t('context')}
                                 {sidebarMode === 'context' && (
-                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></span>
+                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]"></span>
                                 )}
                             </button>
                             <button
                                 onClick={() => setSidebarMode('search')}
-                                className={`relative flex-1 py-4 text-sm font-medium transition-colors ${sidebarMode === 'search' ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'}`}
+                                className={`relative flex-1 py-4 text-sm font-medium transition-colors ${sidebarMode === 'search' ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'}`}
                             >
                                 {t('manualSearch')}
                                 {sidebarMode === 'search' && (
-                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></span>
+                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]"></span>
                                 )}
                             </button>
                         </div>
@@ -753,14 +769,14 @@ const App: React.FC = () => {
                                         key={chunk.id}
                                         id={`source-${chunk.id}`}
                                         className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer group relative backdrop-blur-sm ${highlightedSourceId === chunk.id
-                                            ? 'bg-amber-900/20 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
+                                            ? 'bg-cyan-900/20 border-cyan-500 shadow-[0_0_20px_rgba(34,211,238,0.2)]'
                                             : 'bg-slate-900/40 border-slate-800 hover:border-blue-500/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.1)]'
                                             }`}
                                         onClick={() => setHighlightedSourceId(chunk.id)}
                                     >
                                         <div className="flex justify-between items-start mb-2">
                                             <span
-                                                className="text-[11px] font-bold uppercase tracking-wider text-amber-500 bg-amber-950/30 px-2 py-0.5 rounded border border-amber-500/20 truncate max-w-[240px]"
+                                                className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/20 truncate max-w-[240px]"
                                                 title={getBookTitle(chunk.bookTitle)}
                                             >
                                                 {getBookTitle(chunk.bookTitle)}
@@ -786,7 +802,7 @@ const App: React.FC = () => {
                                                 e.stopPropagation();
                                                 handleReadFull(chunk);
                                             }}
-                                            className="mt-3 w-full text-xs py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-amber-400 rounded-lg transition-colors border border-slate-700 hover:border-amber-500/50 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100"
+                                            className="mt-3 w-full text-xs py-2 px-3 bg-slate-800/80 hover:bg-slate-700 text-cyan-300 rounded-lg transition-colors border border-slate-700 hover:border-cyan-500/50 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100"
                                         >
                                             <BookOpen size={12} />
                                             {t('readFull')}
@@ -805,14 +821,14 @@ const App: React.FC = () => {
                                         onChange={(e) => setManualSearchQuery(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleManualSearch()}
                                         placeholder={t('searchPlaceholder')}
-                                        className="w-full bg-slate-900/50 border border-slate-800 rounded-lg pl-4 pr-10 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                        className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-4 pr-10 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-cyan-500/50 focus:outline-none placeholder-slate-500 backdrop-blur-sm"
                                     />
                                     <button
                                         onClick={handleManualSearch}
                                         disabled={manualSearchLoading}
-                                        className="absolute right-2 top-1.5 text-slate-400 hover:text-amber-400 transition-colors"
+                                        className="absolute right-2 top-1.5 text-slate-400 hover:text-cyan-300 transition-colors"
                                     >
-                                        {manualSearchLoading ? <div className="animate-spin h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full"></div> : <Search size={16} />}
+                                        {manualSearchLoading ? <div className="animate-spin h-4 w-4 border-2 border-cyan-500 border-t-transparent rounded-full"></div> : <Search size={16} />}
                                     </button>
                                 </div>
                             </div>
@@ -826,11 +842,11 @@ const App: React.FC = () => {
                                     manualSearchResults.map((chunk) => (
                                         <div
                                             key={chunk.id}
-                                            className="p-4 rounded-xl border bg-slate-900/40 border-slate-800 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.1)] transition-all cursor-pointer group"
+                                            className="p-4 rounded-xl border bg-slate-900/30 border-slate-800/50 hover:bg-slate-800/40 hover:border-cyan-500/50 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)] transition-all cursor-pointer group backdrop-blur-md"
                                             onClick={() => handleReadFull(chunk)}
                                         >
                                             <div className="flex justify-between items-start mb-2">
-                                                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-500 bg-amber-950/30 px-2 py-0.5 rounded border border-amber-500/20 truncate max-w-[240px]">
+                                                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/20 truncate max-w-[240px]">
                                                     {getBookTitle(chunk.bookTitle)}
                                                 </span>
                                                 <span className="text-[10px] text-slate-500 font-mono">
@@ -857,8 +873,8 @@ const App: React.FC = () => {
             {fullTextModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setFullTextModalOpen(false)}>
                     <div className="glass-panel rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col border border-slate-700/50" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-900/30">
-                            <h3 className="font-bold text-lg text-slate-100 glow-text-amber">{fullTextTitle}</h3>
+                        <div className="p-6 border-b border-slate-700/30 flex justify-between items-center bg-black/20">
+                            <h3 className="font-bold text-lg text-slate-100 glow-text-cyan">{fullTextTitle}</h3>
                             <div className="flex items-center gap-2">
 
                                 <button onClick={() => setFullTextModalOpen(false)} className="text-slate-400 hover:text-white transition-colors hover:rotate-90 duration-200">
@@ -875,7 +891,7 @@ const App: React.FC = () => {
                             ) : (
                                 <div className="flex items-center justify-center h-full text-slate-500">
                                     <div className="animate-pulse flex flex-col items-center">
-                                        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                                         <p>Loading ancient wisdom...</p>
                                     </div>
                                 </div>
@@ -887,9 +903,9 @@ const App: React.FC = () => {
 
             {isSettingsOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setIsSettingsOpen(false)}>
-                    <div className="glass-panel border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                    <div className="glass-panel border border-slate-700/50 rounded-2xl w-full max-w-md shadow-2xl bg-black/60 backdrop-blur-xl" onClick={(e) => e.stopPropagation()}>
                         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-                            <h3 className="font-bold text-lg text-slate-100 glow-text-amber">{t('settings')}</h3>
+                            <h3 className="font-bold text-lg text-slate-100 glow-text-cyan">{t('settings')}</h3>
                             <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-white">
                                 <X size={20} />
                             </button>
@@ -902,7 +918,7 @@ const App: React.FC = () => {
                                     type="password"
                                     value={settings.apiKey}
                                     onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
-                                    className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                    className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-cyan-500 focus:outline-none"
                                 />
                             </div>
 
@@ -911,7 +927,7 @@ const App: React.FC = () => {
                                 <select
                                     value={settings.model}
                                     onChange={(e) => setSettings({ ...settings, model: e.target.value })}
-                                    className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-amber-500 focus:outline-none appearance-none"
+                                    className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-cyan-500 focus:outline-none appearance-none"
                                 >
                                     <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
                                     <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
@@ -923,7 +939,7 @@ const App: React.FC = () => {
                             <div className="pt-4 flex justify-end">
                                 <button
                                     onClick={() => setIsSettingsOpen(false)}
-                                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors shadow-lg shadow-amber-900/20"
+                                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-400 text-white rounded-lg transition-colors shadow-lg shadow-cyan-900/20"
                                 >
                                     {t('save')}
                                 </button>

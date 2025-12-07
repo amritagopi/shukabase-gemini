@@ -3,20 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --neon-amber: #f59e0b;
+  --neon-cyan: #22d3ee;
   --neon-blue: #3b82f6;
-  --neon-purple: #8b5cf6;
+  --neon-purple: #0011ff;
 }
 
 body {
-  background-color: #020617;
-  /* Even darker slate for contrast */
-  background-image: url('/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  color: #e2e8f0;
+  background-color: #000000;
+  /* Deep black */
+  /* Background image replaced by video in index.html */
+
+  color: #f1f5f9;
+  /* Slate 100 for better visibility */
   overflow: hidden;
   /* Prevent body scroll */
 }
@@ -32,26 +30,27 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #7c7c7c;
+  /* User requested gray */
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #a3a3a3;
 }
 
 /* Neon Glow Utilities */
-.glow-text-amber {
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 20px rgba(245, 158, 11, 0.3);
+.glow-text-cyan {
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.6), 0 0 20px rgba(34, 211, 238, 0.3);
 }
 
 .glow-text-blue {
   text-shadow: 0 0 10px rgba(59, 130, 246, 0.6), 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
-.glow-box-amber {
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.1), inset 0 0 10px rgba(245, 158, 11, 0.05);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+.glow-box-cyan {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.1), inset 0 0 10px rgba(34, 211, 238, 0.05);
+  border: 1px solid rgba(34, 211, 238, 0.2);
 }
 
 .glow-box-blue {
@@ -61,15 +60,15 @@ body {
 
 /* Glassmorphism */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
 }
 
 .glass-header {
-  background: rgba(2, 6, 23, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -77,16 +76,16 @@ body {
 /* Animated Gradient Border for Active Elements */
 @keyframes border-rotate {
   0% {
-    border-color: rgba(245, 158, 11, 0.3);
+    border-color: rgba(34, 211, 238, 0.3);
   }
 
   50% {
-    border-color: rgba(245, 158, 11, 0.8);
-    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+    border-color: rgba(34, 211, 238, 0.8);
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
   }
 
   100% {
-    border-color: rgba(245, 158, 11, 0.3);
+    border-color: rgba(34, 211, 238, 0.3);
   }
 }
 
@@ -129,26 +128,29 @@ body {
 }
 
 .prose strong {
-  color: #f8fafc;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .prose a {
-  color: #fbbf24;
+  color: #22d3ee;
+  /* Cyan 400 */
   text-decoration: none;
-  border-bottom: 1px dashed rgba(251, 191, 36, 0.5);
+  border-bottom: 1px dashed rgba(34, 211, 238, 0.5);
   transition: all 0.2s;
 }
 
 .prose a:hover {
-  color: #f59e0b;
+  color: #67e8f9;
+  /* Cyan 300 */
   border-bottom-style: solid;
-  text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
 }
 
 .prose blockquote {
-  border-left: 4px solid #f59e0b;
-  background: linear-gradient(to right, rgba(245, 158, 11, 0.1), transparent);
+  border-left: 4px solid #06b6d4;
+  /* Cyan 500 */
+  background: linear-gradient(to right, rgba(34, 211, 238, 0.1), transparent);
   padding: 0.5rem 1rem;
   border-radius: 0 0.5rem 0.5rem 0;
   font-style: italic;
@@ -173,18 +175,18 @@ body {
   padding: 0.1rem 0.4rem;
   margin: 0 0.2rem;
   border-radius: 0.25rem;
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
+  background: rgba(34, 211, 238, 0.15);
+  color: #67e8f9;
   font-size: 0.85em;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(34, 211, 238, 0.2);
 }
 
 .citation-link:hover {
-  background: rgba(59, 130, 246, 0.3);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  background: rgba(34, 211, 238, 0.3);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
   transform: translateY(-1px);
   text-decoration: none;
 }
