@@ -3,8 +3,10 @@ use std::sync::Mutex;
 use tauri::{Manager, Emitter};
 use std::io::{BufRead, BufReader};
 use std::thread;
+#[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
+#[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 struct AppState {
