@@ -1,4 +1,4 @@
-name: Build and Sign Tauri App
+name: Build and Sign Tauri App (Multi-Language)
 
 on:
   push:
@@ -13,14 +13,49 @@ jobs:
     strategy:
       matrix:
         include:
+          # Windows builds (all 3 language variants)
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            build_variant: en
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            build_variant: ru
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            build_variant: multilingual
+          
+          # macOS x64 builds (all 3 language variants)
           - os: macos-latest
             target: x86_64-apple-darwin
+            build_variant: en
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            build_variant: ru
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            build_variant: multilingual
+          
+          # macOS ARM64 builds (all 3 language variants)
           - os: macos-latest
             target: aarch64-apple-darwin
+            build_variant: en
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            build_variant: ru
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            build_variant: multilingual
+          
+          # Linux builds (all 3 language variants)
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            build_variant: en
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build_variant: ru
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build_variant: multilingual
 
     runs-on: ${{ matrix.os }}
 
@@ -50,29 +85,43 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
-      - name: Build frontend
+      - name: Build frontend (${{ matrix.build_variant }})
         run: npm run build
 
-      - name: Build Tauri app (Windows)
+      - name: Prepare build (${{ matrix.build_variant }})
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            # Set environment variables for Windows
+            echo "SHUKABASE_LANG=${{ matrix.build_variant }}" >> $GITHUB_ENV
+          else
+            export SHUKABASE_LANG=${{ matrix.build_variant }}
+          fi
+
+      - name: Build Tauri app (Windows - ${{ matrix.build_variant }})
         if: runner.os == 'Windows'
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+          SHUKABASE_LANG: ${{ matrix.build_variant }}
         run: |
           cd src-tauri
           cargo tauri build --target ${{ matrix.target }}
 
-      - name: Build Tauri app (macOS)
+      - name: Build Tauri app (macOS - ${{ matrix.build_variant }})
         if: runner.os == 'macOS'
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+          SHUKABASE_LANG: ${{ matrix.build_variant }}
         run: |
           cd src-tauri
           cargo tauri build --target ${{ matrix.target }}
 
-      - name: Build Tauri app (Linux)
+      - name: Build Tauri app (Linux - ${{ matrix.build_variant }})
         if: runner.os == 'Linux'
+        env:
+          SHUKABASE_LANG: ${{ matrix.build_variant }}
         run: |
           cd src-tauri
           cargo tauri build --target ${{ matrix.target }}
@@ -80,6 +129,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: app-${{ matrix.os }}-${{ matrix.target }}
+          name: app-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.build_variant }}
           path: src-tauri/target/release/bundle/
           retention-days: 30
