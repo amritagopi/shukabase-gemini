@@ -166,3 +166,9 @@ split_archives/
 src-tauri/rag_api_server.exe
 лог с VM.txt
 public/background.mp4
+builds/SHUKABASE_EN_0.1.0_x64-setup.exe
+builds/SHUKABASE_Multi_0.1.0_x64-setup.exe
+builds/SHUKABASE_RU_0.1.0_x64-setup.exe
+rag/chat_history/1765162471628.json
+rag/chat_history/1765169381343.json
+rag/chat_history/1765168022899.json

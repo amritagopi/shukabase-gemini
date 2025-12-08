@@ -708,6 +708,7 @@ class RAGEngine:
             # 7. Переранжирование (Re-ranking)
             if use_reranking and self.reranker.model:
                 try:
+                    logger.info("⏳ Starting Re-ranking process...")
                     docs_to_rerank = []
                     indices_to_rerank = []
                     final_results = []
@@ -721,6 +722,7 @@ class RAGEngine:
                             indices_to_rerank.append(i)
                     
                     if docs_to_rerank:
+                        logger.info(f"   Reranking {len(docs_to_rerank)} documents...")
                         reranked_tuples = self.reranker.rerank(query, docs_to_rerank, len(docs_to_rerank))
                         
                         for original_idx_in_subset, score, text in reranked_tuples:
@@ -731,11 +733,15 @@ class RAGEngine:
                     else:
                         # If nothing to rerank (all exact matches), just copy
                         final_results.extend([res for res in final_candidates if 'final_score' not in res])
+                    
+                    logger.info("✅ Re-ranking finished successfully.")
 
                 except Exception as e:
                     logger.error(f"❌ Re-ranking failed (using standard results): {e}")
                     final_results = final_candidates
             else:
+                if use_reranking:
+                    logger.info("⏩ Skipping Re-ranking (model not loaded or disabled)")
                 final_results = final_candidates
 
             return {

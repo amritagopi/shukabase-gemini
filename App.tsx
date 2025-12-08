@@ -87,13 +87,33 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                         </p>
 
                         <div className="grid grid-cols-1 gap-3">
-                            <button
-                                onClick={() => startDownload('all')}
-                                className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
-                            >
-                                <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
-                                <span>Multilingual (RU + EN)</span>
-                            </button>
+                            {/* @ts-ignore */}
+                            {process.env.SHUKABASE_LANG === 'ru' ? (
+                                <button
+                                    onClick={() => startDownload('ru')}
+                                    className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
+                                >
+                                    <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                    <span>Russian Language Pack</span>
+                                </button>
+                            ) : /* @ts-ignore */
+                                process.env.SHUKABASE_LANG === 'en' ? (
+                                    <button
+                                        onClick={() => startDownload('en')}
+                                        className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
+                                    >
+                                        <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                        <span>English Language Pack</span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => startDownload('all')}
+                                        className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
+                                    >
+                                        <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                        <span>Multilingual (RU + EN)</span>
+                                    </button>
+                                )}
                         </div>
 
                         <p className="text-[10px] text-center text-slate-500 mt-4">
@@ -104,18 +124,29 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                     <div className="space-y-6">
                         <div className="text-center">
                             <h3 className="text-lg font-semibold mb-2 text-slate-200">
-                                {status === 'extracting' ? 'Extracting Files...' :
-                                    status === 'initializing' ? 'Initializing Engine...' :
-                                        'Downloading Knowledge Base...'}
+                                {/* @ts-ignore */}
+                                {process.env.SHUKABASE_LANG === 'ru' ? (
+                                    status === 'extracting' ? 'Распаковка файлов...' :
+                                        status === 'initializing' ? 'Инициализация движка...' :
+                                            'Скачивание базы знаний...'
+                                ) : (
+                                    status === 'extracting' ? 'Extracting Files...' :
+                                        status === 'initializing' ? 'Initializing Engine...' :
+                                            'Downloading Knowledge Base...'
+                                )}
                             </h3>
-                            <p className="text-slate-500 text-xs">Please wait, this may take a few minutes.</p>
+                            <p className="text-slate-500 text-xs">
+                                {/* @ts-ignore */}
+                                {process.env.SHUKABASE_LANG === 'ru' ? 'Пожалуйста, подождите. Это может занять несколько минут.' : 'Please wait, this may take a few minutes.'}
+                            </p>
                         </div>
 
                         <div className="relative pt-1">
                             <div className="flex mb-2 items-center justify-between">
                                 <div>
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
-                                        Progress
+                                        {/* @ts-ignore */}
+                                        {process.env.SHUKABASE_LANG === 'ru' ? 'Прогресс' : 'Progress'}
                                     </span>
                                 </div>
                                 <div className="text-right">
@@ -139,7 +170,8 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                                     onClick={() => setStep('lang')}
                                     className="text-xs text-red-400 hover:text-red-300 underline"
                                 >
-                                    Try Again
+                                    {/* @ts-ignore */}
+                                    {process.env.SHUKABASE_LANG === 'ru' ? 'Попробовать снова' : 'Try Again'}
                                 </button>
                             </div>
                         )}

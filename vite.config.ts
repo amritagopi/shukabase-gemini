@@ -18,7 +18,9 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.SHUKABASE_LANG': JSON.stringify(process.env.SHUKABASE_LANG || 'all'),
+      'process.env.SHUKABASE_DATA_ID': JSON.stringify(process.env.SHUKABASE_DATA_ID)
     },
     resolve: {
       alias: {
