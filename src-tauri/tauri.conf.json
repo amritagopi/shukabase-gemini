@@ -44,10 +44,11 @@
         "headerImage": "icons/installer_header.bmp",
         "sidebarImage": "icons/installer_sidebar.bmp",
         "installMode": "currentUser",
-        "displayLanguageSelector": true
-              ,
-      "signingIdentity": null,
-      "certificateThumbprint": null
+        "displayLanguageSelector": true,
+        "languages": [
+          "English",
+          "Russian"
+        ]
       }
     }
   }
