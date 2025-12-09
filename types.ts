@@ -28,11 +28,16 @@ export interface Message {
 }
 
 export interface AppSettings {
-  apiKey: string;
+  apiKey: string; // Google API Key
   backendUrl: string;
   useMockData: boolean;
-  model: string;
+  model: string; // Google Model
   language: 'ru' | 'en';
+  // New Multi-provider settings
+  // New Multi-provider settings
+  provider: 'google' | 'openrouter';
+  openrouterApiKey: string;
+  openrouterModel: string;
 }
 
 export interface ConversationHeader {

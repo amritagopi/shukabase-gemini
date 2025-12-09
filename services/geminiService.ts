@@ -9,10 +9,7 @@ const API_BASE_URL = "http://localhost:5000/api";
 export const getConversations = async (): Promise<ConversationHeader[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/conversations`);
-    if (!response.ok) {
-      // Return empty array on error to be resilient
-      return [];
-    }
+    if (!response.ok) return [];
     return await response.json();
   } catch (error) {
     console.error("Error fetching conversations:", error);
@@ -23,9 +20,7 @@ export const getConversations = async (): Promise<ConversationHeader[]> => {
 export const getConversation = async (id: string): Promise<Conversation | null> => {
   try {
     const response = await fetch(`${API_BASE_URL}/conversations/${id}`);
-    if (!response.ok) {
-      return null;
-    }
+    if (!response.ok) return null;
     return await response.json();
   } catch (error) {
     console.error(`Error fetching conversation ${id}:`, error);
@@ -37,9 +32,7 @@ export const saveConversation = async (conversation: Conversation): Promise<void
   try {
     await fetch(`${API_BASE_URL}/conversations`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(conversation),
     });
   } catch (error) {
@@ -49,9 +42,7 @@ export const saveConversation = async (conversation: Conversation): Promise<void
 
 export const deleteConversation = async (id: string): Promise<void> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/conversations/${id}`, {
-      method: 'DELETE'
-    });
+    const response = await fetch(`${API_BASE_URL}/conversations/${id}`, { method: 'DELETE' });
     if (!response.ok) throw new Error(`Failed to delete: ${response.status}`);
   } catch (e) {
     console.error("Failed to delete conversation:", e);
@@ -59,12 +50,97 @@ export const deleteConversation = async (id: string): Promise<void> => {
   }
 };
 
-export const searchScriptures = async (query: string, settings: AppSettings): Promise<SourceChunk[]> => {
-  if (settings.useMockData) {
-    return DEMO_CHUNKS;
+// --- OpenRouter (OpenAI Compatible) Helper with Tool Support ---
+const SEARCH_TOOL_DEF = {
+  type: "function",
+  function: {
+    name: "search_database",
+    description: "Search for spiritual knowledge in the database (Srimad Bhagavatam, Bhagavad Gita, etc). Use this to find verses, purports, or concepts.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "The search query. Concepts (e.g. 'dharma'), Names (e.g. 'Krishna'), or Verses (e.g. 'SB 1.1.1'). Prioritize Russian terms if user asks in Russian."
+        }
+      },
+      required: ["query"]
+    }
   }
+};
 
-  // Use settings.backendUrl if available, otherwise fallback to API_BASE_URL/search
+const callOpenRouter = async (
+  messages: any[],
+  settings: AppSettings,
+  temperature: number = 0
+): Promise<any> => {
+  console.group("🚀 [OpenRouter] Request Debugger");
+  try {
+    const url = "https://openrouter.ai/api/v1/chat/completions";
+    const apiKey = settings.openrouterApiKey;
+
+    if (!apiKey) {
+      console.error("❌ API Key is missing inside callOpenRouter!");
+      throw new Error("OpenRouter API Key is missing (client-side check).");
+    }
+
+    console.log("📍 Target URL:", url);
+    console.log("🔑 API Key Status:", apiKey.startsWith("sk-or-") ? "Valid Prefix (sk-or-)" : "Unknown Prefix", `(${apiKey.substring(0, 8)}...)`);
+    console.log("🧠 Model:", settings.openrouterModel);
+
+    const requestBody = {
+      model: settings.openrouterModel,
+      messages: messages,
+      temperature: temperature,
+      tools: [SEARCH_TOOL_DEF],
+      tool_choice: "auto"
+    };
+
+    const bodyString = JSON.stringify(requestBody);
+    console.log(`📦 Payload Size: ${bodyString.length} chars`);
+    console.log("📄 Request Messages Preview:", messages.map(m => `[${m.role}] ${m.content?.substring(0, 50)}...`));
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://shukabase.app', // OpenRouter requirement
+        'X-Title': 'Shukabase AI'
+      },
+      body: bodyString
+    });
+
+    console.log(`📡 Response Status: ${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`❌ [OpenRouter] HTTP Error Body:`, errText);
+
+      let errMsg = errText;
+      try {
+        const errJson = JSON.parse(errText);
+        // Common OpenRouter error structure
+        errMsg = errJson.error?.message || JSON.stringify(errJson);
+      } catch { }
+      throw new Error(`OpenRouter API Error: ${errMsg}`);
+    }
+
+    const data = await response.json();
+    console.log("✅ [OpenRouter] Success! Response Data:", data);
+    console.groupEnd();
+    return data.choices?.[0]?.message;
+
+  } catch (error) {
+    console.error("🔥 [OpenRouter] CRITICAL FAILURE:", error);
+    console.groupEnd();
+    throw error;
+  }
+};
+
+export const searchScriptures = async (query: string, settings: AppSettings): Promise<SourceChunk[]> => {
+  if (settings.useMockData) return DEMO_CHUNKS;
+
   const url = settings.backendUrl || `${API_BASE_URL}/search`;
 
   try {
@@ -77,7 +153,7 @@ export const searchScriptures = async (query: string, settings: AppSettings): Pr
       body: JSON.stringify({
         query: query,
         language: lang,
-        top_k: 20,
+        top_k: 20, // Reverted to 20 as requested
         api_key: settings.apiKey
       })
     });
@@ -87,7 +163,6 @@ export const searchScriptures = async (query: string, settings: AppSettings): Pr
       return [];
     }
     const data = await response.json();
-
     const results = data.results || [];
     return results.map((item: any) => ({
       id: `${(item.book || 'unknown').replace(/\s+/g, "").toLowerCase()}.${item.chapter}.${item.verse}`,
@@ -113,238 +188,226 @@ export const generateRAGResponse = async (
   onSourcesFound?: (chunks: SourceChunk[]) => void,
   signal?: AbortSignal
 ) => {
-  if (!settings.apiKey) {
-    throw new Error("API Key is missing. Please check settings.");
-  }
+  // --- GOOGLE PROVIDER (ReAct Pattern) ---
+  if (settings.provider === 'google') {
+    if (!settings.apiKey) throw new Error("Google API Key is missing.");
+    const client = createClient(settings.apiKey);
+    const MAX_STEPS = 15;
+    let currentStep = 0;
 
-  const client = createClient(settings.apiKey);
-  const MAX_STEPS = 25;
-  let currentStep = 0;
-
-  let scratchpad = "";
-
-  const SYSTEM_PROMPT = `
-You are an intelligent spiritual research assistant. Your goal is to answer the user's question by searching the scripture database.
-You have access to a tool called 'search_database'.
+    // ReAct System Prompt for Google
+    const GOOGLE_SYSTEM_PROMPT = `
+You are SHUKA, an intelligent spiritual research assistant.
+Your goal is to answer the user's question by searching the scripture database using the 'search_database' tool.
 
 INSTRUCTIONS:
-1.  Analyze the user's request.
-2.  Use the following Thought-Action-Observation loop to gather information:
-    
-    Thought: <Reasoning about what to search for next>
-    Action: search_database("search query")
-    Observation: <The results from the database>
-    
-    (Repeat this loop as necessary until you have enough information)
+1. Analyze the user's request.
+2. Use the following Thought-Action-Observation loop strictly:
 
-SEARCH STRATEGY:
-When searching for information, strictly follow this tiered approach to avoid overwhelming the search results:
+   Thought: <Reasoning about what to search for next>
+   Action: search_database("search query")
+   Observation: <The results from the database>
 
-1. **Phase 1: Entity Extraction & Normalization (CRITICAL step)**
-   - Identify the main subject (Entity/Name/Concept).
-   - **Normalize to Nominative Case (Именительный падеж):** If the user asks about "Камсу" (Accusative), you MUST search for "Камса" (Nominative).
-   - **Distinguish Entity vs. Concept:**
-     - If it is a *Proper Name* (e.g., Kamsa, Krishna, Vrindavan) -> Search the **Single Word**.
-     - If it is a *General Concept* (e.g., Bhakti Yoga, Soul nature) -> Search the **2-3 word phrase** (e.g., "Бхакти йога", "природа души"). Searching single words like "nature" creates too much noise.
+3. **SEARCH STRATEGY (CRITICAL):**
+   - **Normalize to Nominative Case:** If user asks "about Kamsa" (accusative), search "Kamsa".
+   - **Language Priority:** If query is Russian, search RUSSIAN terms first.
+   - **Entities:** Search single words for names (e.g. "Krishna").
+   - **Concepts:** Search phrases for concepts (e.g. "Bhakti Yoga").
 
-2. **Phase 2: The Search Loop**
-   - **Step A (Primary Russian Term):** Search the normalized Russian term first (e.g., "Камса"). *Reason: The database is primarily in Russian.*
-   - **Step B (Latin/English Term):** If Step A yields poor results, search the transliterated term (e.g., "Kamsa").
-   - **Step C (Contextual Query):** If A and B fail, create a specific query (e.g., "Демон Камса история").
+4. **DATABASE LIMITATIONS:**
+   - The database contains **Srila Prabhupada's books ONLY**.
+   - It DOES NOT contain outside bhajans/songs.
+   - If asked for a song not in the text: ADMIT IT. Say "This song is not in my database".
+   - DO NOT INVENT TITLES OR LYRICS.
 
-3. **Phase 3: Result Analysis**
-   - If the search returns > 10 results, look for the most relevant specific chunk before answering.
+5. When you have sufficient information:
+   Thought: I have enough information.
+   Final Answer: <Your comprehensive response citing sources with [[ID]]>
 
-STRICT RULE FOR FIRST ACTION:
-Your FIRST \`search_database\` action MUST use the simplest possible **Nominative** form of the main keyword. Do NOT start with complex questions like "Who killed Kamsa". Start with "Камса".
-
-3.  When you have sufficient information, output the final answer:
-    
-    Thought: I have enough information.
-    Final Answer: <Your comprehensive, detailed response citing the sources found>
-
-4.  If the initial search results are not relevant, refine your search query and try again.
-5.  Always cite sources using [[ID]] format (double brackets) when providing the Final Answer. Do NOT use [ID:...] or (ID:...).
-6.  If you have performed many searches and still haven't found the perfect answer, synthesize the best possible answer from what you HAVE found. Do not give up.
-
-FORMATTING RULES:
-When citing verses, use the following special blocks for better readability:
-
-For the verse text:
-**📖 [Book] [Chapter].[Verse]**
-> [Devanagari text if available]
-> *[Transliteration if available]*
->
-> "[Translation]"
-
-For the purport (commentary):
-**💬 Purport by Srila Prabhupada:**
-> [Key parts of the purport...]
-
-Then provide your own analysis without special formatting.
-
-NO DUPLICATION RULE (CRITICAL):
-- In your Final Answer, NEVER quote the same verse/text/book reference more than once.
-- If you found the same content multiple times in different searches, cite it only ONCE.
-- Each [[ID]] citation should appear only ONCE in your response.
-- Check your scratchpad for previously cited sources before adding a new citation.
-- Synthesize information from duplicate findings, don't repeat them.
-
-LANGUAGE RULES:
-- **Output Language:** The \`Final Answer\` MUST be in the same language as the user's query.
-  - User Russian -> Final Answer Russian.
-  - User English -> Final Answer English.
-- **Thinking Process:** You may generate \`Thought:\` traces in English (for better logic) or Russian, but the content sent to the user must match their language.
-- **Search Queries:** 
-  - ALWAYS prioritize Russian search terms first, even if the user asks in English (assuming the source material is Russian).
-  - Use English search terms only as a fallback.
-- Do not mix languages unless quoting a text in its original language.
-
-Begin!
-
-EXAMPLES:
-
-User: "Почему Кришна убил Камсу?"
-Thought: The user is asking about "Kamsa" (in accusative case "Камсу"). I need to find who Kamsa is and his relation to Krishna.
-Step 1: Normalize "Камсу" -> "Камса".
-Step 2: Search for the single entity first.
-Action: search_database("Камса")
-
-User: "Tell me about the soul"
-Thought: The user is asking about "soul". The Russian equivalent is "душа".
-Step 1: Simple search for the main concept.
-Action: search_database("душа")
-
-User: "What is Karma Yoga?"
-Thought: This is a concept, not a single name. A single word search for "Yoga" is too broad. I will search for the phrase.
-Action: search_database("карма йога")
+RULES:
+- **NO HALLUCINATIONS:** Answer ONLY based on Observations.
+- **CITATIONS:** Use [[BookChunkID]] for every claim.
+- **NO DUPLICATION:** Never cite the same ID twice.
+- **LANGUAGE:** Respond in the user's language.
 `;
 
-  if (initialChunks.length > 0) {
-    const formattedContext = initialChunks.map(c => `[[${c.id}]] ${c.bookTitle} ${c.chapter}:${c.verse} - "${c.content}"`).join('\n');
-    scratchpad += `Observation: Found initial relevant verses:\n${formattedContext}\n\n`;
-  }
-
-  while (currentStep < MAX_STEPS) {
-    currentStep++;
-    console.log(`--- Agent Step ${currentStep} ---`);
-
-    if (signal?.aborted) {
-      throw new Error("Aborted by user");
+    let scratchpad = "";
+    if (initialChunks.length > 0) {
+      const formattedContext = initialChunks.map(c => `[[${c.id}]] ${c.bookTitle} ${c.chapter}:${c.verse} - "${c.content}"`).join('\n');
+      scratchpad += `Observation: Found initial relevant verses:\n${formattedContext}\n\n`;
     }
 
-    const messages = [
-      ...chatHistory.map(msg => ({ role: msg.role, parts: msg.parts })),
-      { role: 'user', parts: [{ text: userQuery }] },
-      { role: 'model', parts: [{ text: scratchpad }] }
-    ];
+    while (currentStep < MAX_STEPS) {
+      currentStep++;
+      if (signal?.aborted) throw new Error("Aborted");
 
-    try {
+      const messages: any[] = [
+        ...chatHistory.map(msg => ({ role: msg.role, parts: msg.parts })),
+        { role: 'user', parts: [{ text: userQuery }] },
+        { role: 'model', parts: [{ text: scratchpad }] }
+      ];
+
+      console.log(`[Google Agent] Sending request to model '${settings.model}'...`);
       const result = await client.models.generateContent({
         model: settings.model,
         contents: messages,
         config: {
-          systemInstruction: SYSTEM_PROMPT,
-          temperature: 0.2,
+          systemInstruction: GOOGLE_SYSTEM_PROMPT,
+          temperature: 0,
           stopSequences: ["Observation:"],
         }
       });
-
-      if (signal?.aborted) {
-        throw new Error("Aborted by user");
-      }
-
       const responseText = result.text || "";
-      console.log("Agent Response:", responseText);
-
+      console.log(`[Google Agent] Step ${currentStep} Response:`, responseText);
       scratchpad += responseText;
 
-      const thoughtMatch = responseText.match(/Thought:\s*(.*?)(?=\nAction:|\nFinal Answer:|$)/si);
+      // SAFETY: If model output is empty/broken, break loop to prevent hang
+      if (!responseText || responseText.trim().length === 0) {
+        console.warn("[Google Agent] Empty response from model. Breaking loop.");
+        break;
+      }
+
+      // ... Parsing logic (same as before) ...
       const actionMatch = responseText.match(/Action:\s*search_database\((["'])(.*?)\1\)/i);
       const finalAnswerMatch = responseText.match(/Final Answer:\s*(.*)/si);
 
-      if (thoughtMatch && onStep) {
-        onStep({ type: 'thought', content: thoughtMatch[1].trim(), timestamp: Date.now() });
-      }
+      const thoughtMatch = responseText.match(/Thought:\s*(.*?)(?=\nAction:|\nFinal Answer:|$)/si);
+      if (thoughtMatch && onStep) onStep({ type: 'thought', content: thoughtMatch[1].trim(), timestamp: Date.now() });
 
-      if (finalAnswerMatch) {
-        return finalAnswerMatch[1].trim();
-      }
+      if (finalAnswerMatch) return finalAnswerMatch[1].trim();
 
       if (actionMatch) {
         const query = actionMatch[2];
-        console.log(`Agent Action: Searching for '${query}'`);
+        if (onStep) onStep({ type: 'action', content: `Searching: ${query}`, timestamp: Date.now() });
+        const results = await searchScriptures(query, settings);
+        if (onSourcesFound) onSourcesFound(results);
 
-        if (onStep) onStep({ type: 'action', content: `Searching for: "${query}"`, timestamp: Date.now() });
-
-        try {
-          const results = await searchScriptures(query, settings);
-
-          if (onSourcesFound) {
-            onSourcesFound(results);
-          }
-
-          let observation = "";
-          if (results.length === 0) {
-            observation = "\nObservation: No relevant verses found for this query.\n\n";
-          } else {
-            const formatted = results.map(c => `[[${c.id}]] ${c.bookTitle} ${c.chapter}:${c.verse} - "${c.content}"`).join('\n');
-            observation = `\nObservation: Found the following verses:\n${formatted}\n\n`;
-          }
-
-          scratchpad += observation;
-          if (onStep) onStep({ type: 'observation', content: `Found ${results.length} results.`, timestamp: Date.now() });
-
-        } catch (err: any) {
-          console.error("Search Error:", err);
-          scratchpad += `\nObservation: Error executing search: ${err.message}\n\n`;
-        }
+        const obs = results.length > 0
+          ? `\nObservation: Found:\n${results.map(c => `[[${c.id}]] ${c.content}`).join('\n')}\n`
+          : `\nObservation: No results.\n`;
+        scratchpad += obs;
       } else {
-        console.log("Agent did not output Action or Final Answer. Continuing...");
-
-        if (!responseText.trim()) {
-          console.warn("Empty response from agent, breaking loop.");
-          break;
-        }
-
+        // If no action and no final answer, check if we are just "thinking" too long
+        console.log("[Google Agent] No Action/Final Answer detected. Continuing...");
+        if (!responseText.trim()) break;
         scratchpad += "\n";
       }
+    }
+    return scratchpad || "No response generated (Loop ended)."; // Fallback
+  }
 
-    } catch (error) {
-      console.error("Agent Loop Error:", error);
-      throw error;
+  // --- OPENROUTER PROVIDER (Native Tool Calling) ---
+  if (settings.provider === 'openrouter') {
+    if (!settings.openrouterApiKey) throw new Error("OpenRouter API Key is missing.");
+
+    const SYSTEM_PROMPT = `
+You are SHUKA, an intelligent spiritual research assistant dedicated to helping users study the books of His Divine Grace A.C. Bhaktivedanta Swami Prabhupada.
+
+CORE OBJECTIVE:
+Answer the user's spiritual questions by strictly searching the provided scripture database.
+- You MUST NOT invent information.
+- You MUST ground every claim in the retrieved texts.
+- If you don't find the answer in the database, admit it. Do not make things up.
+
+SEARCH STRATEGY (CRITICAL):
+1. **Normalization**: Convert search terms to their simplest **Nominative Case** (Именительный падеж).
+   - User: "Про Камсу" -> Search: "Камса" (NOT "Про Камсу")
+   - User: "О души" -> Search: "душа"
+2. **Entities vs Concepts**: 
+   - For proper names (Krishna, Arjuna), search the single word.
+   - For concepts (Bhakti Yoga), search the phrase to avoid noise.
+3. **Language Priority**: If the user asks in Russian, **ALWAYS search in Russian first**.
+4. **Tool Usage**: Use the 'search_database' tool multiple times if needed to gather full context.
+
+IMPORTANT LIMITATIONS (MUST FOLLOW):
+- **DATABASE SCOPE**: This database contains **Srila Prabhupada's books ONLY**. It does NOT contain the full songbook of previous Acharyas (like Narottama Dasa Thakura, Bhaktivinoda Thakura), unless quoted inside the books.
+- **NO INVENTION**: If the user asks for a specific song/bhajan and you find "mentions" of the person but NOT the full lyrics/text in the chunks, **DO NOT INVENT** the title or lyrics.
+- **HONESTY**: If the specific text is missing, say: "К сожалению, полного текста этого бхаджана нет в текущей базе данных (она содержит только книги Шрилы Прабхупады), но вот что говорится об этой личности: ..."
+
+CITATION RULES:
+- Every major statement must be backed by a source.
+- Use the format **[[BookChunkID]]** (e.g., [[sb.1.1.1]]).
+- **NO DUPLICATION**: Do not cite the same Chunk ID twice.
+
+You name is Shuka. Be humble, precise, and helpful.
+`;
+
+    // Prepare message history
+    const messages: any[] = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...chatHistory.map(msg => ({
+        role: msg.role === 'model' ? 'assistant' : 'user',
+        content: msg.parts[0].text
+      })),
+      { role: 'user', content: userQuery }
+    ];
+
+    if (initialChunks.length > 0) {
+      messages.push({
+        role: 'system',
+        content: `Initial Context:\n${initialChunks.map(c => `[[${c.id}]] ${c.content}`).join('\n')}`
+      });
+    }
+
+    let currentStep = 0;
+    const MAX_STEPS = 10;
+
+    while (currentStep < MAX_STEPS) {
+      currentStep++;
+      if (signal?.aborted) throw new Error("Aborted");
+
+      const responseMessage = await callOpenRouter(messages, settings);
+
+      // Add the Assistant's response to history immediately
+      messages.push(responseMessage);
+
+      const content = responseMessage.content;
+      const toolCalls = responseMessage.tool_calls;
+
+      if (content) {
+        console.log("Assistant Thought/Content:", content);
+        // OpenRouter models often output thoughts before tool calls or as final answer
+        // We can heuristic check if this is a final answer if no tools are called
+        if (onStep) onStep({ type: 'thought', content: content, timestamp: Date.now() });
+      }
+
+      if (toolCalls && toolCalls.length > 0) {
+        for (const toolCall of toolCalls) {
+          if (toolCall.function.name === 'search_database') {
+            const args = JSON.parse(toolCall.function.arguments);
+            const query = args.query;
+
+
+            if (onStep) onStep({ type: 'action', content: `Searching: "${query}"`, timestamp: Date.now() });
+            console.log(`[OpenRouter] Tool Call: Searching '${query}'`);
+
+            const results = await searchScriptures(query, settings);
+
+            // Reverted truncation as requested
+            console.log(`[OpenRouter] Found ${results.length} results.`);
+
+            if (onSourcesFound) onSourcesFound(results);
+
+            const toolResultContent = results.length > 0
+              ? `Found ${results.length} verses:\n${results.map(c => `[[${c.id}]] ${c.bookTitle} ${c.chapter}:${c.verse} - "${c.content}"`).join('\n')}`
+              : "No relevant verses found.";
+
+            // Push Tool Result to history
+            messages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              name: toolCall.function.name,
+              content: toolResultContent
+            });
+            if (onStep) onStep({ type: 'observation', content: `Found ${results.length} results.`, timestamp: Date.now() });
+          }
+        }
+      } else {
+        // No tool calls -> Final Answer
+        return content || "I could not generate a response.";
+      }
     }
   }
 
-  console.warn("Agent reached MAX_STEPS. Forcing a conclusion.");
-  if (onStep) onStep({ type: 'thought', content: "Reaching time limit. Synthesizing available information...", timestamp: Date.now() });
-
-  try {
-    const finalPrompt = `
-      You have reached the maximum number of steps for this research. 
-      Please provide the best possible answer based on the information you have gathered so far in your scratchpad. 
-      Do not search anymore. Just summarize and answer.
-      Start your response with "Final Answer:".
-    `;
-
-    const result = await client.models.generateContent({
-      model: settings.model,
-      contents: [
-        ...chatHistory.map(msg => ({ role: msg.role, parts: msg.parts })),
-        { role: 'user', parts: [{ text: userQuery }] },
-        { role: 'model', parts: [{ text: scratchpad }] },
-        { role: 'user', parts: [{ text: finalPrompt }] }
-      ],
-      config: {
-        temperature: 0.3,
-      }
-    });
-
-    const text = result.text || "";
-    const match = text.match(/Final Answer:\s*(.*)/si);
-    return match ? match[1].trim() : text;
-
-  } catch (e) {
-    return "I pondered the question deeply and gathered much information, but I struggled to synthesize a final answer in time. Please check the retrieved sources.";
-  }
+  return "Response generation failed.";
 };

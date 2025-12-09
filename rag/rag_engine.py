@@ -321,7 +321,7 @@ class RAGEngine:
         try:
             if len(texts) == 1:
                 result = genai.embed_content(
-                    model=self.embedding_model_name,
+                    model="models/text-embedding-004",
                     content=texts[0],
                     task_type="RETRIEVAL_QUERY"
                 )
@@ -331,7 +331,7 @@ class RAGEngine:
                 all_embeddings = []
                 for text in texts:
                     result = genai.embed_content(
-                        model=self.embedding_model_name,
+                        model="models/text-embedding-004",
                         content=text,
                         task_type="RETRIEVAL_QUERY"
                     )
@@ -643,6 +643,16 @@ class RAGEngine:
                     unique_vector_results.append(res)
             
             top_vector_results = unique_vector_results[:top_k * 2]
+
+            # --- DEBUG: ЧТО НАШЕЛ ВЕКТОР? ---
+            if top_vector_results:
+                logger.info(f"   👀 ВЕКТОРНЫЙ ПОИСК (Топ-3):")
+                for i, res in enumerate(top_vector_results[:3]):
+                    preview = res['text'][:100].replace('\n', ' ')
+                    logger.info(f"      {i+1}. [{res['score']:.4f}] {preview}...")
+            else:
+                logger.info("   👀 Векторный поиск ничего не нашел.")
+            # --------------------------------
 
             # 4. Keyword Search (BM25)
             keyword_results = []

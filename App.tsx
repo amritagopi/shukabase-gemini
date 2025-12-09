@@ -11,8 +11,11 @@ const DEFAULT_SETTINGS: AppSettings = {
     apiKey: localStorage.getItem('shukabase_api_key') || '',
     backendUrl: 'http://localhost:5000/api/search',
     useMockData: false,
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-1.5-flash',
     language: localStorage.getItem('shukabase_language') === 'ru' ? 'ru' : 'en',
+    provider: (localStorage.getItem('shukabase_provider') as 'google' | 'openrouter') || 'google',
+    openrouterApiKey: localStorage.getItem('shukabase_openrouter_api_key') || '',
+    openrouterModel: localStorage.getItem('shukabase_openrouter_model') || 'z-ai/glm-4.5-air:free',
 };
 
 // --- Setup Wizard Component ---
@@ -202,6 +205,9 @@ const App: React.FC = () => {
         if (settings.apiKey) {
             localStorage.setItem('shukabase_api_key', settings.apiKey);
         }
+        localStorage.setItem('shukabase_provider', settings.provider);
+        localStorage.setItem('shukabase_openrouter_api_key', settings.openrouterApiKey);
+        localStorage.setItem('shukabase_openrouter_model', settings.openrouterModel);
     }, [settings]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [currentSources, setCurrentSources] = useState<SourceChunk[]>([]);
@@ -219,6 +225,30 @@ const App: React.FC = () => {
     const [manualSearchResults, setManualSearchResults] = useState<SourceChunk[]>([]);
     const [manualSearchLoading, setManualSearchLoading] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
+
+    // OpenRouter State
+    const [openRouterModels, setOpenRouterModels] = useState<any[]>([]);
+    const [isLoadingModels, setIsLoadingModels] = useState(false);
+
+    const fetchOpenRouterModels = async () => {
+        setIsLoadingModels(true);
+        try {
+            const res = await fetch('https://openrouter.ai/api/v1/models?supported_parameters=tools');
+            if (res.ok) {
+                const data = await res.json();
+                // Filter: Free (prompt=0) models
+                const models = (data.data || [])
+                    .filter((m: any) => m.pricing?.prompt === "0")
+                    .sort((a: any, b: any) => (b.context_length || 0) - (a.context_length || 0));
+                setOpenRouterModels(models);
+            }
+        } catch (e) {
+            console.error("Failed to fetch models", e);
+        } finally {
+            setIsLoadingModels(false);
+        }
+    };
+
 
     // Initial Check for Setup
     useEffect(() => {
@@ -407,7 +437,16 @@ const App: React.FC = () => {
                 return;
             }
             console.error("Error generating response:", error);
-            const errorMsg: Message = { role: 'model', content: "Sorry, I encountered an error. Please check your API key and settings.", parts: [{ text: "Sorry, I encountered an error. Please check your API key and settings." }], timestamp: Date.now() };
+            const errorMessage = settings.language === 'ru'
+                ? "Прошу прощения, произошла ошибка. Пожалуйста, проверьте ваш API ключ и настройки, или попробуйте позже."
+                : "Sorry, I encountered an error. Please check your API key and settings, or try again later.";
+
+            const errorMsg: Message = {
+                role: 'model',
+                content: errorMessage,
+                parts: [{ text: errorMessage }],
+                timestamp: Date.now()
+            };
             setActiveConversation({
                 ...updatedConversation,
                 messages: [...updatedConversation.messages, errorMsg]
@@ -945,29 +984,132 @@ const App: React.FC = () => {
                         </div>
 
                         <div className="p-6 space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300">{t('geminiApiKey')}</label>
-                                <input
-                                    type="password"
-                                    value={settings.apiKey}
-                                    onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
-                                    className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-cyan-500 focus:outline-none"
-                                />
+                            <div className="space-y-4 border-b border-slate-700/50 pb-6 mb-6">
+                                <label className="text-sm font-medium text-slate-300">{t('aiProvider')}</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => setSettings({ ...settings, provider: 'google' })}
+                                        className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${settings.provider === 'google'
+                                            ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.2)]'
+                                            : 'bg-slate-800/50 text-slate-400 border border-slate-700/50 hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        Google Gemini
+                                    </button>
+                                    <button
+                                        onClick={() => setSettings({ ...settings, provider: 'openrouter' })}
+                                        className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${settings.provider === 'openrouter'
+                                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                                            : 'bg-slate-800/50 text-slate-400 border border-slate-700/50 hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        OpenRouter
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300">Model</label>
-                                <select
-                                    value={settings.model}
-                                    onChange={(e) => setSettings({ ...settings, model: e.target.value })}
-                                    className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-cyan-500 focus:outline-none appearance-none"
-                                >
-                                    <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-                                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                                    <option value="gemini-2.0-flash-lite-preview-02-05">Gemini 2.0 Flash Lite Preview</option>
-                                </select>
-                                <p className="text-xs text-slate-500">Select a different model if you hit rate limits.</p>
-                            </div>
+                            {settings.provider === 'google' ? (
+                                <>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-300">{t('geminiApiKey')}</label>
+                                        <input
+                                            type="password"
+                                            value={settings.apiKey}
+                                            onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
+                                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-300">Model</label>
+                                        <input
+                                            type="text"
+                                            list="model-options"
+                                            value={settings.model}
+                                            onChange={(e) => setSettings({ ...settings, model: e.target.value })}
+                                            placeholder="Select or type model ID..."
+                                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                                        />
+                                        <datalist id="model-options">
+                                            <option value="gemini-2.5-flash-preview-09-2025" />
+                                            <option value="gemini-2.5-flash-lite" />
+                                            <option value="gemini-2.5-flash" />
+                                            <option value="gemini-2.0-flash" />
+                                        </datalist>
+                                        <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                                            {settings.language === 'ru' ? (
+                                                <>
+                                                    См. <button onClick={() => openUrl('https://ai.google.dev/gemini-api/docs/changelog?hl=ru').catch(() => window.open('https://ai.google.dev/gemini-api/docs/changelog?hl=ru', '_blank'))} className="text-cyan-400 hover:underline cursor-pointer">историю изменений</button>, чтобы узнать о новых и закрытых моделях. На Preview и Experimental версии часто действуют щедрые бесплатные лимиты.
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Check the <button onClick={() => openUrl('https://ai.google.dev/gemini-api/docs/changelog').catch(() => window.open('https://ai.google.dev/gemini-api/docs/changelog', '_blank'))} className="text-cyan-400 hover:underline cursor-pointer">changelog</button> for new/deprecated models. Preview & Experimental versions often have generous free tier limits.
+                                                </>
+                                            )}
+                                        </p>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="space-y-4 animate-fade-in">
+                                    <div className="bg-purple-900/10 border border-purple-500/20 p-3 rounded-lg text-xs text-purple-200">
+                                        {t('openRouterDescription')} <button onClick={() => openUrl('https://openrouter.ai/models').catch(() => window.open('https://openrouter.ai/models', '_blank'))} className="text-purple-400 hover:underline">{t('checkAvailableModels')}</button>.
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-300">{t('openRouterApiKey')}</label>
+                                        <input
+                                            type="password"
+                                            value={settings.openrouterApiKey}
+                                            onChange={(e) => setSettings({ ...settings, openrouterApiKey: e.target.value })}
+                                            placeholder="sk-or-v1-..."
+                                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                                            onBlur={() => {
+                                                if (settings.openrouterApiKey && openRouterModels.length === 0) fetchOpenRouterModels();
+                                            }}
+                                        />
+                                        <p className="text-[10px] text-slate-500">{t('keySavedLocally')}</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-sm font-medium text-slate-300">{t('model')}</label>
+                                            <button
+                                                onClick={fetchOpenRouterModels}
+                                                disabled={isLoadingModels}
+                                                className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50"
+                                            >
+                                                {isLoadingModels ? <span className="animate-spin">↻</span> : <Sparkles size={12} />}
+                                                {t('refreshList')}
+                                            </button>
+                                        </div>
+
+                                        {openRouterModels.length > 0 ? (
+                                            <select
+                                                value={settings.openrouterModel}
+                                                onChange={(e) => setSettings({ ...settings, openrouterModel: e.target.value })}
+                                                className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500 focus:outline-none appearance-none"
+                                            >
+                                                {openRouterModels.map((m: any) => (
+                                                    <option key={m.id} value={m.id}>
+                                                        {m.name || m.id} ({Math.round((m.context_length || 0) / 1024)}k ctx)
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                value={settings.openrouterModel}
+                                                onChange={(e) => setSettings({ ...settings, openrouterModel: e.target.value })}
+                                                placeholder="google/gemini-2.0-flash-exp:free"
+                                                className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                                            />
+                                        )}
+                                        <p className="text-[10px] text-slate-500">
+                                            {t('openRouterFooter')}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="pt-6 border-t border-slate-700/50 text-center space-y-3">
                                 <p className="text-sm text-cyan-200/80 font-medium leading-relaxed">

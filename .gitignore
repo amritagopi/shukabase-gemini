@@ -174,3 +174,6 @@ rag/chat_history/1765169381343.json
 rag/chat_history/1765168022899.json
 src-tauri/keys
 signed_build.bat
+builds/SHUKABASE_EN_SIGNED_0.1.0_x64-setup.exe
+builds/SHUKABASE_Multi_SIGNED_0.1.0_x64-setup.exe
+builds/SHUKABASE_RU_SIGNED_0.1.0_x64-setup.exe
