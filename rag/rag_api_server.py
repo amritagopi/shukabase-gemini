@@ -77,6 +77,7 @@ CHAT_HISTORY_DIR = os.path.join(base_path, "chat_history")
 app = Flask(__name__)
 CORS(app)
 rag_engine_instance = None
+init_lock = threading.Lock()
 
 # Состояние процесса установки
 setup_state = {
@@ -219,28 +220,37 @@ def background_download_task(language_mode):
 # --- Инициализация ---
 def initialize_engine():
     global rag_engine_instance
-    try:
-        # Проверяем наличие основных файлов
-        required = ["faiss_index", "chunked_scriptures"] # Check partial names
-        present_files = os.listdir(DATA_DIR) if os.path.exists(DATA_DIR) else []
-        logger.info(f"Files in DATA_DIR: {present_files}")
-        
-        # Determine strict requirements based on what we see (multilingual vs single)
-        # But minimally we need at least one index and one json
-        has_index = any(f.startswith("faiss_index") for f in present_files)
-        has_json = any(f.startswith("chunked_scriptures") for f in present_files)
-        
-        if not (has_index and has_json):
-            logger.warning(f"Missing essential files. Present: {present_files}")
-            return False
-
-        logger.info("🧠 Initializing RAGEngine...")
-        rag_engine_instance = RAGEngine(languages=['ru', 'en'], base_dir=DATA_DIR)
-        logger.info("✅ RAGEngine initialized successfully.")
+    
+    # Double-checked locking optimization
+    if rag_engine_instance is not None:
         return True
-    except Exception as e:
-        logger.error(f"❌ Failed to initialize RAGEngine: {e}", exc_info=True)
-        return False
+
+    with init_lock:
+        if rag_engine_instance is not None:
+            return True
+            
+        try:
+            # Проверяем наличие основных файлов
+            required = ["faiss_index", "chunked_scriptures"] # Check partial names
+            present_files = os.listdir(DATA_DIR) if os.path.exists(DATA_DIR) else []
+            logger.info(f"Files in DATA_DIR: {present_files}")
+            
+            # Determine strict requirements based on what we see (multilingual vs single)
+            # But minimally we need at least one index and one json
+            has_index = any(f.startswith("faiss_index") for f in present_files)
+            has_json = any(f.startswith("chunked_scriptures") for f in present_files)
+            
+            if not (has_index and has_json):
+                logger.warning(f"Missing essential files. Present: {present_files}")
+                return False
+
+            logger.info("🧠 Initializing RAGEngine...")
+            rag_engine_instance = RAGEngine(languages=['ru', 'en'], base_dir=DATA_DIR)
+            logger.info("✅ RAGEngine initialized successfully.")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize RAGEngine: {e}", exc_info=True)
+            return False
 
 # --- API Endpoints ---
 

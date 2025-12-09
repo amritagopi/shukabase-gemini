@@ -31,6 +31,7 @@ pub fn run() {
       }
 
       app.handle().plugin(tauri_plugin_opener::init())?;
+      app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
 
       let app_handle = app.handle().clone();
       

@@ -192,7 +192,7 @@ export const generateRAGResponse = async (
   if (settings.provider === 'google') {
     if (!settings.apiKey) throw new Error("Google API Key is missing.");
     const client = createClient(settings.apiKey);
-    const MAX_STEPS = 15;
+    const MAX_STEPS = 10;
     let currentStep = 0;
 
     // ReAct System Prompt for Google
@@ -220,7 +220,7 @@ INSTRUCTIONS:
    - If asked for a song not in the text: ADMIT IT. Say "This song is not in my database".
    - DO NOT INVENT TITLES OR LYRICS.
 
-5. When you have sufficient information:
+5. When you have sufficient information OR if you fail to find info after 2-3 attempts:
    Thought: I have enough information.
    Final Answer: <Your comprehensive response citing sources with [[ID]]>
 
@@ -229,6 +229,7 @@ RULES:
 - **CITATIONS:** Use [[BookChunkID]] for every claim.
 - **NO DUPLICATION:** Never cite the same ID twice.
 - **LANGUAGE:** Respond in the user's language.
+- **EFFICIENCY**: Try to find the answer in as few steps as possible.
 `;
 
     let scratchpad = "";

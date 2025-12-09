@@ -5,6 +5,7 @@ import { generateRAGResponse, getConversations, getConversation, saveConversatio
 import { ParsedContent } from './utils/citationParser';
 import ConversationHistory from './ConversationHistory';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { check } from '@tauri-apps/plugin-updater';
 import { TRANSLATIONS } from './translations';
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -275,6 +276,37 @@ const App: React.FC = () => {
         };
         checkStatus();
     }, []);
+
+    // Check for updates
+    useEffect(() => {
+        const checkForUpdates = async () => {
+            try {
+                const update = await check();
+                if (update?.available) {
+                    const confirmUpdate = window.confirm(
+                        settings.language === 'ru'
+                            ? `Доступна новая версия ${update.version}! Хотите обновить?`
+                            : `A new version ${update.version} is available! Do you want to update?`
+                    );
+                    if (confirmUpdate) {
+                        await update.downloadAndInstall();
+                        // Restart is usually automatic or manual restart needed
+                        const restart = window.confirm(
+                            settings.language === 'ru'
+                                ? "Обновление готово. Перезапустить сейчас?"
+                                : "Update ready. Restart now?"
+                        );
+                        if (restart) {
+                            await update.relaunch();
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to check for updates:", error);
+            }
+        };
+        checkForUpdates();
+    }, [settings.language]);
 
     // Helper for translations
     const t = (key: keyof typeof TRANSLATIONS.en) => {
