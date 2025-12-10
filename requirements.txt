@@ -20,3 +20,4 @@ filelock
 packaging
 typing_extensions
 pyinstaller
+einops

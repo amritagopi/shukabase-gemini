@@ -236,6 +236,20 @@ const App: React.FC = () => {
     const [isLoadingModels, setIsLoadingModels] = useState(false);
     const [agentThought, setAgentThought] = useState('');
     const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [activeConversation?.messages, loading, agentSteps]);
 
     useEffect(() => {
         if (!loading) {
@@ -786,7 +800,12 @@ const App: React.FC = () => {
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth">
+                </header>
+
+                <div 
+                    ref={chatContainerRef}
+                    className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth"
+                >
                     {(activeConversation?.messages || []).map((msg, index) => {
                         const isUser = msg.role === 'user';
                         return (
