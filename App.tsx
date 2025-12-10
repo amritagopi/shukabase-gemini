@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Settings, BookOpen, Database, AlertCircle, Scroll, Globe, Sparkles, Server, X, Search, Download, Heart } from 'lucide-react';
-import { Message, SourceChunk, AppSettings, Conversation, ConversationHeader } from './types';
+import { Message, SourceChunk, AppSettings, Conversation, ConversationHeader, AgentStep } from './types';
 import { generateRAGResponse, getConversations, getConversation, saveConversation, searchScriptures } from './services/geminiService';
 import { ParsedContent } from './utils/citationParser';
 import ConversationHistory from './ConversationHistory';
+import PromptDrawer from './PromptDrawer';
+import ToolCardWidget from './ToolCardWidget';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import { TRANSLATIONS } from './translations';
@@ -226,9 +228,12 @@ const App: React.FC = () => {
     const [manualSearchResults, setManualSearchResults] = useState<SourceChunk[]>([]);
     const [manualSearchLoading, setManualSearchLoading] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
+    const [isPromptDrawerOpen, setIsPromptDrawerOpen] = useState(false);
+    const [drawerInitialState, setDrawerInitialState] = useState<{ templateId?: string, data?: any }>({});
 
     // OpenRouter State
     const [openRouterModels, setOpenRouterModels] = useState<any[]>([]);
+    const [isLoadingModels, setIsLoadingModels] = useState(false);
     const [agentThought, setAgentThought] = useState('');
     const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
 
@@ -307,7 +312,8 @@ const App: React.FC = () => {
                                 : "Update ready. Restart now?"
                         );
                         if (restart) {
-                            await update.relaunch();
+                            // await update.relaunch();
+                            window.location.reload();
                         }
                     }
                 }
@@ -761,6 +767,16 @@ const App: React.FC = () => {
                             <Globe size={14} className="text-cyan-400" />
                             {settings.language === 'en' ? 'EN' : 'RU'}
                         </button>
+
+                        <button
+                            onClick={() => setIsPromptDrawerOpen(true)}
+                            className="p-2 text-cyan-400 hover:text-white transition-colors hover:bg-cyan-500/10 rounded-lg group relative"
+                            title="AI Tools Studio"
+                        >
+                            <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>
+                        </button>
+
                         <button
                             onClick={() => setIsSettingsOpen(true)}
                             className="p-2 text-slate-400 hover:text-white transition-colors hover:bg-slate-800/50 rounded-lg"
@@ -788,6 +804,18 @@ const App: React.FC = () => {
                                     `}
                                 >
                                     <ParsedContent content={msg.content} onCitationClick={handleCitationClick} t={t} />
+
+                                    {/* Generative UI Tool Widget */}
+                                    {msg.toolCall && (
+                                        <ToolCardWidget
+                                            toolId={msg.toolCall.id}
+                                            initialData={msg.toolCall.args}
+                                            onOpenTool={(template, data) => {
+                                                setDrawerInitialState({ templateId: template.id, data });
+                                                setIsPromptDrawerOpen(true);
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         );
@@ -827,7 +855,7 @@ const App: React.FC = () => {
                                                 </div>
                                                 <div className="flex-1">
                                                     <span className={`uppercase text-[9px] font-bold tracking-wider mb-0.5 block ${step.type === 'thought' ? 'text-purple-400' :
-                                                            step.type === 'action' ? 'text-cyan-400' : 'text-green-400'
+                                                        step.type === 'action' ? 'text-cyan-400' : 'text-green-400'
                                                         }`}>
                                                         {step.type}
                                                     </span>
@@ -1243,7 +1271,21 @@ const App: React.FC = () => {
                     </div>
                 </div >
             )}
-        </div >
+
+            <PromptDrawer
+                isOpen={isPromptDrawerOpen}
+                onClose={() => {
+                    setIsPromptDrawerOpen(false);
+                    setDrawerInitialState({}); // Cleanup on close
+                }}
+                initialTemplateId={drawerInitialState.templateId}
+                initialData={drawerInitialState.data}
+                onSelectDevice={(prompt, templateTitle) => {
+                    handleSend(prompt);
+                    // Optional: You could add a toast or visual feedback that a "Special Tool" was used
+                }}
+            />
+        </div>
     );
 };
 

@@ -25,6 +25,11 @@ export interface Message {
   sources?: SourceChunk[];
   isThinking?: boolean;
   agentSteps?: AgentStep[];
+  toolCall?: {
+    id: string; // The specific tool ID (e.g., 'lecture_architect')
+    name: string; // Display name
+    args: Record<string, any>; // Pre-filled arguments
+  };
 }
 
 export interface AppSettings {
