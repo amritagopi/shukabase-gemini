@@ -229,41 +229,17 @@ const App: React.FC = () => {
 
     // OpenRouter State
     const [openRouterModels, setOpenRouterModels] = useState<any[]>([]);
-    const [isLoadingModels, setIsLoadingModels] = useState(false);
     const [agentThought, setAgentThought] = useState('');
+    const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (loading) {
-            const thoughts = settings.language === 'ru'
-                ? [
-                    "Анализирую ваш вопрос...",
-                    "Ищу мудрость в Ведах...",
-                    "Сверяюсь со Шримад-Бхагаватам...",
-                    "Просматриваю комментарии Шрилы Прабхупады...",
-                    "Формулирую лучший ответ...",
-                    "Почти готово..."
-                ]
-                : [
-                    "Analyzing your question...",
-                    "Searching Vedic wisdom...",
-                    "Consulting Srimad-Bhagavatam...",
-                    "Reviewing Srila Prabhupada's purports...",
-                    "Formulating the best answer...",
-                    "Almost ready..."
-                ];
-
-            let index = 0;
-            setAgentThought(thoughts[0]);
-            interval = setInterval(() => {
-                index = (index + 1) % thoughts.length;
-                setAgentThought(thoughts[index]);
-            }, 2500);
-        } else {
+        if (!loading) {
             setAgentThought('');
+            return;
         }
-        return () => clearInterval(interval);
-    }, [loading, settings.language]);
+        // Fallback simple animation if no steps yet
+        // ... (can keep or remove, but user asked for REAL logs)
+    }, [loading]);
 
     const fetchOpenRouterModels = async () => {
         setIsLoadingModels(true);
@@ -454,6 +430,8 @@ const App: React.FC = () => {
 
         const newUserMsg: Message = { role: 'user', content: userMsgContent, parts: [{ text: userMsgContent }], timestamp: Date.now() };
 
+        setAgentSteps([]); // Clear previous steps
+
         const updatedConversation: Conversation = activeConversation
             ? { ...activeConversation, messages: [...activeConversation.messages, newUserMsg], lastModified: Date.now() }
             : { id: Date.now().toString(), title: userMsgContent.slice(0, 30) + '...', messages: [newUserMsg], createdAt: new Date().toISOString(), lastModified: Date.now() };
@@ -472,7 +450,9 @@ const App: React.FC = () => {
                 [],
                 settings,
                 updatedConversation.messages,
-                undefined,
+                (step) => {
+                    setAgentSteps(prev => [...prev, step]);
+                },
                 (chunks) => {
                     collectedSources = [...collectedSources, ...chunks];
                 },
@@ -828,10 +808,37 @@ const App: React.FC = () => {
                                 <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                                 <span className="ml-2 tracking-widest uppercase text-xs opacity-80">{t('agentThinking')}</span>
                             </div>
-                            {agentThought && (
-                                <p className="mt-4 text-xs text-cyan-500/70 font-mono animate-pulse text-center max-w-xs transition-opacity duration-500">
-                                    {agentThought}
-                                </p>
+
+                            {/* Detailed Agent Steps Visualization */}
+                            {agentSteps.length > 0 && (
+                                <div className="mt-6 w-full max-w-lg bg-slate-900/40 rounded-xl border border-slate-800 p-4 backdrop-blur-sm animate-fade-in relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent animate-shimmer"></div>
+                                    <h4 className="text-[10px] uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2 font-bold">
+                                        <Server size={12} />
+                                        {t('agentWorking')}
+                                    </h4>
+                                    <div className="space-y-3 font-mono text-xs max-h-40 overflow-y-auto custom-scrollbar pr-2 flex flex-col-reverse">
+                                        {agentSteps.slice().reverse().map((step, idx) => (
+                                            <div key={idx} className={`flex gap-3 animate-slide-in ${idx === 0 ? 'opacity-100' : 'opacity-60'}`}>
+                                                <div className="shrink-0 mt-0.5">
+                                                    {step.type === 'thought' && <div className="w-2 h-2 rounded-full bg-purple-500/50 mt-1"></div>}
+                                                    {step.type === 'action' && <div className="w-2 h-2 rounded-full bg-cyan-500/50 mt-1"></div>}
+                                                    {step.type === 'observation' && <div className="w-2 h-2 rounded-full bg-green-500/50 mt-1"></div>}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <span className={`uppercase text-[9px] font-bold tracking-wider mb-0.5 block ${step.type === 'thought' ? 'text-purple-400' :
+                                                            step.type === 'action' ? 'text-cyan-400' : 'text-green-400'
+                                                        }`}>
+                                                        {step.type}
+                                                    </span>
+                                                    <p className="text-slate-300 leading-relaxed">
+                                                        {step.content}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                         </div>
                     )}
