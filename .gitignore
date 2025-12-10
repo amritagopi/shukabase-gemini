@@ -189,9 +189,4 @@ rag_data/
 !tsconfig.json
 !src-tauri/tauri.conf.json
 !src-tauri/capabilities/default.json
-!embeddings_metadata_*.json
-!rag/faiss_metadata_*.json
-!rag/parsed_scriptures_*.json
-!rag/chunked_scriptures_*.json
-!rag/embeddings_metadata_*.json
-!rag/faiss_metadata_*.json
+

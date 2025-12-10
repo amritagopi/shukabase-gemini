@@ -36,15 +36,10 @@ pub fn run() {
       }
 
       // 3. Initialize Updater (Safe init - unexpected config shouldn't kill app)
-      match tauri_plugin_updater::Builder::new().build() {
-          Ok(updater_plugin) => {
-              if let Err(e) = app.handle().plugin(updater_plugin) {
-                  log::error!("Failed to register updater plugin: {}", e);
-              }
-          }
-          Err(e) => {
-              log::error!("Failed to build updater plugin: {}", e);
-          }
+      // 3. Initialize Updater (Safe init - unexpected config shouldn't kill app)
+      // Note: .build() returns the plugin directly, not a Result
+      if let Err(e) = app.handle().plugin(tauri_plugin_updater::Builder::new().build()) {
+          log::error!("Failed to register updater plugin: {}", e);
       }
 
       let app_handle = app.handle().clone();
