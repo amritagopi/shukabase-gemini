@@ -536,6 +536,12 @@ const App: React.FC = () => {
             if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
 
             const htmlContent = await response.text();
+
+            // Check if we got the SPA index.html instead of a book file
+            if (htmlContent.includes('<div id="root">') || htmlContent.includes('<title>SHUKABASE</title>')) {
+                throw new Error("File not found");
+            }
+
             let contentToDisplay = htmlContent;
             const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
             if (bodyMatch) contentToDisplay = bodyMatch[1];
@@ -556,8 +562,8 @@ const App: React.FC = () => {
             setCurrentHtmlPath(path);
             setFullTextModalOpen(true);
         } catch (error) {
-            setFullTextContent("Could not load full chapter text. Here is the excerpt: " + (title || ""));
-            setFullTextTitle("Error Loading Full Text");
+            setFullTextContent("Could not load full chapter text. Please try checking the source manually.");
+            setFullTextTitle("Error Loading Text");
             setFullTextModalOpen(true);
         }
     };
@@ -580,16 +586,55 @@ const App: React.FC = () => {
         let bookFolder = bookMap[chunk.bookTitle] || null;
         let chapterPath = '';
 
-        if (chunk.chapter && typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\'))) {
-            const normalizedPath = chunk.chapter.replace(/\\/g, '/');
+        // Handle both slash and dot separators in chapter
+        if (chunk.chapter && typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\') || chunk.chapter.includes('.'))) {
+            const normalizedPath = chunk.chapter.replace(/\\/g, '/').replace(/\./g, '/');
             chapterPath = `/books/${lang}/${normalizedPath}`;
-        } else if (bookFolder) {
+
+            // If we have a book folder but the path doesn't start with it, prepend it
+            if (bookFolder && !normalizedPath.startsWith(bookFolder)) {
+                // But wait, normalizedPath might be just "2/5" for SB 2.5
+                // If bookFolder is found, we should construct it propery
+            }
+        }
+
+        // Revised logic to handle "2.5" which means Canto 2 Chapter 5
+        if (chunk.chapter && typeof chunk.chapter === 'string') {
+            let normalizedChapter = chunk.chapter.replace(/\\/g, '/');
+            // If looks like "2.5" and is SB/CC, convert to "2/5"
+            if (normalizedChapter.includes('.') && (bookFolder === 'sb' || bookFolder === 'cc')) {
+                normalizedChapter = normalizedChapter.replace(/\./g, '/');
+            }
+
+            if (normalizedChapter.includes('/')) {
+                // It's likely a full path or partial path
+                if (bookFolder && !normalizedChapter.includes(bookFolder)) {
+                    // e.g. "2/5"
+                    if (chunk.verse) {
+                        chapterPath = `/books/${lang}/${bookFolder}/${normalizedChapter}/${chunk.verse}/index.html`;
+                    } else {
+                        chapterPath = `/books/${lang}/${bookFolder}/${normalizedChapter}/index.html`;
+                    }
+                } else {
+                    // e.g. "sb/2/5"
+                    chapterPath = `/books/${lang}/${normalizedChapter}`;
+                }
+            } else if (bookFolder) {
+                // Logic for simple number "1"
+                if (chunk.verse) {
+                    chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter}/${chunk.verse}/index.html`;
+                } else {
+                    chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter || 1}/index.html`;
+                }
+            }
+        } else if (bookFolder) { // Numeric chapter
             if (chunk.verse) {
                 chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter}/${chunk.verse}/index.html`;
             } else {
                 chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter || 1}/index.html`;
             }
         } else {
+            // ... existing fallback
             if (!bookFolder) {
                 for (const [title, folder] of Object.entries(bookMap)) {
                     if (chunk.bookTitle.includes(title) || title.includes(chunk.bookTitle)) {
@@ -616,15 +661,9 @@ const App: React.FC = () => {
         let niceChapter = chunk.chapter;
         let niceVerse = chunk.verse;
 
-        if (typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\'))) {
-            const parts = chunk.chapter.replace(/\\/g, '/').split('/');
-            if (parts.length >= 2) {
-                const numbers = parts.filter(p => /^\d+$/.test(p));
-                if (numbers.length >= 2) {
-                    niceChapter = numbers[numbers.length - 2];
-                    niceVerse = numbers[numbers.length - 1];
-                }
-            }
+        if (typeof chunk.chapter === 'string') {
+            // Clean up nice display
+            niceChapter = chunk.chapter.replace(/\\/g, '/').replace(/\//g, '.');
         }
 
         const titleSuffix = niceVerse ? `${niceChapter ? niceChapter + '.' : ''}${niceVerse}` : (niceChapter ? `Chapter ${niceChapter}` : '');
