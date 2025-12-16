@@ -521,19 +521,21 @@ class RAGEngine:
             'noi': 'noi', 'нн': 'noi', 'nectar of instruction': 'noi'
         }
         
-        match = re.search(r'([a-zа-я\s]+?)\.?\s*(\d+)[. :](\d+)', query)
-        if match:
-            book_raw, chapter, verse = match.groups()
-            book_key = book_raw.strip()
-            if book_key in book_map:
-                return {'book': book_map[book_key], 'chapter': chapter, 'verse': verse}
-        
+        # Сначала проверяем формат Песнь.Глава.Стих (для ШБ)
         match_sb = re.search(r'([a-zа-я\s]+?)\.?\s*(\d+)\.(\d+)\.(\d+)', query)
         if match_sb:
             book_raw, canto, chapter, verse = match_sb.groups()
             book_key = book_raw.strip()
             if book_key in book_map:
                 return {'book': book_map[book_key], 'chapter': f"{canto}.{chapter}", 'verse': verse}
+
+        # Затем проверяем формат Глава.Стих
+        match = re.search(r'([a-zа-я\s]+?)\.?\s*(\d+)[. :](\d+)', query)
+        if match:
+            book_raw, chapter, verse = match.groups()
+            book_key = book_raw.strip()
+            if book_key in book_map:
+                return {'book': book_map[book_key], 'chapter': chapter, 'verse': verse}
 
         return None
 

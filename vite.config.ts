@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       entries: ['index.html', 'src/**/*.{ts,tsx}'],
-      exclude: ['vitest', '@testing-library/jest-dom', '@testing-library/react', 'jsdom']
+      // exclude: ['vitest', '@testing-library/jest-dom', '@testing-library/react', 'jsdom']
     },
     plugins: [react()],
     define: {
@@ -27,6 +27,12 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/setup.ts',
+      css: true
     }
   };
 });

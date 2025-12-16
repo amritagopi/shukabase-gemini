@@ -44,8 +44,12 @@ const ToolCardWidget: React.FC<ToolCardWidgetProps> = ({ toolId, initialData, on
                             <Sparkles size={12} className="text-cyan-400 animate-pulse" />
                             <span className="text-xs font-bold uppercase tracking-widest text-cyan-500/80">Suggested Tool</span>
                         </div>
-                        <h4 className="font-bold text-slate-100 truncate pr-2 group-hover:text-cyan-400 transition-colors">{template.title}</h4>
-                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{template.description}</p>
+                        <h4 className="font-bold text-slate-100 truncate pr-2 group-hover:text-cyan-400 transition-colors">
+                            {typeof template.title === 'object' ? (template.title as any).en : template.title}
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+                            {typeof template.description === 'object' ? (template.description as any).en : template.description}
+                        </p>
 
                         {/* Preview of pre-filled data */}
                         {Object.keys(initialData).length > 0 && (

@@ -9,6 +9,7 @@ import ToolCardWidget from './ToolCardWidget';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import { TRANSLATIONS } from './translations';
+import { generateChapterPath } from './src/utils/bookUtils';
 
 const DEFAULT_SETTINGS: AppSettings = {
     apiKey: localStorage.getItem('shukabase_api_key') || '',
@@ -94,7 +95,7 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
 
                         <div className="grid grid-cols-1 gap-3">
                             {/* @ts-ignore */}
-                            {process.env.SHUKABASE_LANG === 'ru' ? (
+                            {(typeof process !== 'undefined' && process.env?.SHUKABASE_LANG === 'ru') ? (
                                 <button
                                     onClick={() => startDownload('ru')}
                                     className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
@@ -103,7 +104,7 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                                     <span>Russian Language Pack</span>
                                 </button>
                             ) : /* @ts-ignore */
-                                process.env.SHUKABASE_LANG === 'en' ? (
+                                (typeof process !== 'undefined' && process.env?.SHUKABASE_LANG === 'en') ? (
                                     <button
                                         onClick={() => startDownload('en')}
                                         className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
@@ -131,7 +132,7 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                         <div className="text-center">
                             <h3 className="text-lg font-semibold mb-2 text-slate-200">
                                 {/* @ts-ignore */}
-                                {process.env.SHUKABASE_LANG === 'ru' ? (
+                                {(typeof process !== 'undefined' && process.env?.SHUKABASE_LANG === 'ru') ? (
                                     status === 'extracting' ? 'Распаковка файлов...' :
                                         status === 'initializing' ? 'Инициализация движка...' :
                                             'Скачивание базы знаний...'
@@ -143,7 +144,7 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                             </h3>
                             <p className="text-slate-500 text-xs">
                                 {/* @ts-ignore */}
-                                {process.env.SHUKABASE_LANG === 'ru' ? 'Пожалуйста, подождите. Это может занять несколько минут.' : 'Please wait, this may take a few minutes.'}
+                                {(typeof process !== 'undefined' && process.env?.SHUKABASE_LANG === 'ru') ? 'Пожалуйста, подождите. Это может занять несколько минут.' : 'Please wait, this may take a few minutes.'}
                             </p>
                         </div>
 
@@ -152,7 +153,7 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                                 <div>
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
                                         {/* @ts-ignore */}
-                                        {process.env.SHUKABASE_LANG === 'ru' ? 'Прогресс' : 'Progress'}
+                                        {(typeof process !== 'undefined' && process.env?.SHUKABASE_LANG === 'ru') ? 'Прогресс' : 'Progress'}
                                     </span>
                                 </div>
                                 <div className="text-right">
@@ -177,7 +178,7 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                                     className="text-xs text-red-400 hover:text-red-300 underline"
                                 >
                                     {/* @ts-ignore */}
-                                    {process.env.SHUKABASE_LANG === 'ru' ? 'Попробовать снова' : 'Try Again'}
+                                    {(typeof process !== 'undefined' && process.env?.SHUKABASE_LANG === 'ru') ? 'Попробовать снова' : 'Try Again'}
                                 </button>
                             </div>
                         )}
@@ -619,31 +620,40 @@ const App: React.FC = () => {
         let bookFolder = bookMap[chunk.bookTitle] || null;
         let chapterPath = '';
 
-        if (chunk.chapter && typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\'))) {
-            const normalizedPath = chunk.chapter.replace(/\\/g, '/');
-            chapterPath = `/books/${lang}/${normalizedPath}`;
-        } else if (bookFolder) {
+        if (!bookFolder) {
+            for (const [title, folder] of Object.entries(bookMap)) {
+                if (chunk.bookTitle.includes(title) || title.includes(chunk.bookTitle)) {
+                    bookFolder = folder;
+                    break;
+                }
+            }
+        }
+
+        if (bookFolder) {
+            let chapterSegments: string[] = [];
+            if (typeof chunk.chapter === 'string') {
+                chapterSegments = chunk.chapter.split(/[./\\]/).filter(s => s.trim());
+            } else if (chunk.chapter) {
+                chapterSegments = [String(chunk.chapter)];
+            }
+
+            // If chapterSegments is empty (e.g. 0), default to 1?
+            if (chapterSegments.length === 0) chapterSegments = ['1'];
+
+            const chapterUrlPart = chapterSegments.join('/');
+
             if (chunk.verse) {
-                chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter}/${chunk.verse}/index.html`;
+                chapterPath = `/books/${lang}/${bookFolder}/${chapterUrlPart}/${chunk.verse}/index.html`;
             } else {
-                chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter || 1}/index.html`;
+                chapterPath = `/books/${lang}/${bookFolder}/${chapterUrlPart}/index.html`;
             }
         } else {
-            if (!bookFolder) {
-                for (const [title, folder] of Object.entries(bookMap)) {
-                    if (chunk.bookTitle.includes(title) || title.includes(chunk.bookTitle)) {
-                        bookFolder = folder;
-                        break;
-                    }
-                }
-            }
-            if (bookFolder) {
-                if (chunk.verse) {
-                    chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter}/${chunk.verse}/index.html`;
-                } else {
-                    chapterPath = `/books/${lang}/${bookFolder}/${chunk.chapter || 1}/index.html`;
-                }
+            // Check if chunk.chapter looks like a full path (has Slashes and maybe looks like book/chapter)
+            if (chunk.chapter && typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\'))) {
+                const normalizedPath = chunk.chapter.replace(/\\/g, '/');
+                chapterPath = `/books/${lang}/${normalizedPath}`;
             } else {
+                // Fallback: Show content directly
                 setFullTextContent(chunk.content);
                 setFullTextTitle(chunk.bookTitle);
                 setFullTextModalOpen(true);
@@ -748,7 +758,7 @@ const App: React.FC = () => {
                     playsInline
                     className="w-full h-full object-cover"
                 >
-                    <source src="/background.mp4" type="video/mp4" />
+                    <source src="background.mp4" type="video/mp4" />
                 </video>
                 {/* Overlay for tint/glassmorphism base */}
                 <div className="absolute inset-0 bg-[#050B14]/40 backdrop-blur-sm" />
