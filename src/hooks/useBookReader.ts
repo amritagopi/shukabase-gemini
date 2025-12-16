@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { getBookTitle } from '../utils/bookUtils'; // Assuming this exists or I need to move it
+import { getBookTitle, getBookFolder } from '../utils/bookUtils';
 
 export interface BookReaderState {
     fullTextModalOpen: boolean;
@@ -84,46 +84,53 @@ export const useBookReader = (language: 'en' | 'ru') => {
         const lang = language;
 
         try {
-            // Logic to construct path
-            // Check if chunk.chapter has full path
-            const bookFolder = (chunk.bookTitle === 'Srimad-Bhagavatam' || chunk.bookTitle === 'Шримад-Бхагаватам') ? 'sb' :
-                (chunk.bookTitle === 'Bhagavad-gita As It Is' || chunk.bookTitle === 'Бхагавад-гита как она есть') ? 'bg' :
-                    (chunk.sourceUrl && chunk.sourceUrl.includes('/books/')) ? chunk.sourceUrl.split('/books/')[1].split('/')[1] :
-                        'other';
+            // Restore robust logic from historical commit 581c599
+            // 1. Try to identify the book folder
+            const bookFolder = getBookFolder(chunk.bookTitle);
 
-            // Hardcoded map for simplicity if getBookTitle logic is complex to import, but ideally import it
-            // For now, assume standard path construction logic duplicated here or imported.
-            // I'll assume chunk.chapter can be a path.
+            // 2. Determine the path
+            // PRIORITY 1: If chapter looks like a path (has slashes), assume it's a relative path from books root
+            // This handles cases where RAG returns 'sb/1/2' or full matching paths
+            if (chunk.chapter && typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\'))) {
+                const normalizedPath = String(chunk.chapter).replace(/\\/g, '/');
+                // Clean leading slashes just in case
+                const cleanPath = normalizedPath.replace(/^\/+/, '');
 
-            if (chunk.sourceUrl && chunk.sourceUrl.endsWith('.html')) {
-                chapterPath = chunk.sourceUrl;
-            } else {
-                let normalizedChapter = String(chunk.chapter).replace(/\\/g, '/');
+                // If the path ALREADY starts with the book folder, we should trust it
+                chapterPath = `/books/${lang}/${cleanPath}`;
 
-                // Robust check for existing full path
-                const cleanChapterPath = normalizedChapter.replace(/^\/+/, '');
-                let validPathFound = false;
-
-                if (bookFolder) {
-                    const regex = new RegExp(`^${bookFolder}(/|$)`, 'i');
-                    if (regex.test(cleanChapterPath)) {
-                        chapterPath = `/books/${lang}/${cleanChapterPath}`;
-                        validPathFound = true;
-                    }
+                // Add index.html if missing
+                if (!chapterPath.endsWith('.html')) {
+                    chapterPath = `${chapterPath}/index.html`;
                 }
+            }
+            // PRIORITY 2: Construct path from components if book folder is known
+            else if (bookFolder) {
+                const chapterPart = chunk.chapter || '1';
+                // Handle "1.2" style notation -> "1/2"
+                const chapterPathSegment = String(chapterPart).split('.').join('/');
 
-                if (!validPathFound && bookFolder) {
-                    chapterPath = `/books/${lang}/${bookFolder}/${cleanChapterPath}/index.html`;
-                    // Simple heuristic, might need the full logic from App.tsx if it was complex
+                if (chunk.verse) {
+                    chapterPath = `/books/${lang}/${bookFolder}/${chapterPathSegment}/${chunk.verse}/index.html`;
+                } else {
+                    chapterPath = `/books/${lang}/${bookFolder}/${chapterPathSegment}/index.html`;
                 }
-
-                // Fallback for numbered
-                if (!chapterPath.includes('.html')) {
-                    // Reconstruct from 1.2.3 logic
-                    const parts = String(chunk.chapter).split('.');
-                    if (parts.length > 0) {
-                        chapterPath = `/books/${lang}/${bookFolder}/${parts.join('/')}/${chunk.verse ? chunk.verse + '/' : ''}index.html`;
+            }
+            // PRIORITY 3: Fallback or fuzzy search (handled partly by getBookFolder)
+            else {
+                // Final fallback: try to use chapter as path if nothing else worked
+                if (chunk.sourceUrl && chunk.sourceUrl.includes('/books/')) {
+                    // Extract relative path from sourceUrl if available
+                    // e.g. http://localhost.../books/en/sb/1/1/index.html -> sb/1/1/index.html
+                    const parts = chunk.sourceUrl.split('/books/');
+                    if (parts[1]) {
+                        const relPath = parts[1].split('/').slice(1).join('/'); // remove the lang part
+                        chapterPath = `/books/${lang}/${relPath}`;
                     }
+                } else {
+                    console.warn("Could not determine path for chunk:", chunk);
+                    // Fallback to displaying content content directly handled in catch block
+                    throw new Error("Path construction failed");
                 }
             }
 
@@ -144,6 +151,7 @@ export const useBookReader = (language: 'en' | 'ru') => {
             }
 
             const titleSuffix = niceVerse ? `${niceChapter ? niceChapter + '.' : ''}${niceVerse}` : (niceChapter ? `Chapter ${niceChapter}` : '');
+            console.log("DEBUG: Loading full text from:", chapterPath);
             await loadFullText(chapterPath, `${niceBookTitle} ${titleSuffix}`);
 
         } catch (e) {

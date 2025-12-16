@@ -4,7 +4,8 @@ import { useBookReader } from '../hooks/useBookReader';
 
 // Mock getBookTitle if needed, or rely on it handling it
 vi.mock('../utils/bookUtils', () => ({
-    getBookTitle: (t: string) => t
+    getBookTitle: (t: string) => t,
+    getBookFolder: (t: string) => t === 'Srimad-Bhagavatam' ? 'sb' : null
 }));
 
 describe('useBookReader', () => {
@@ -60,6 +61,26 @@ describe('useBookReader', () => {
         // Expect fetch to be called with resolved path
         expect(global.fetch).toHaveBeenCalledWith(
             expect.stringMatching(/\/books\/en\/sb\/1\/2\/4\/index\.html$/)
+        );
+    });
+
+    it('handleReadFull correctly processes existing paths in chapter', async () => {
+        const { result } = renderHook(() => useBookReader('en'));
+
+        const mockChunk = {
+            bookTitle: 'Srimad-Bhagavatam',
+            chapter: 'sb/1/2/3', // Path-like chapter
+            content: 'snippet',
+            metadata: {}
+        };
+
+        await act(async () => {
+            await result.current.handleReadFull(mockChunk);
+        });
+
+        // Should resolve to /books/en/sb/1/2/3/index.html
+        expect(global.fetch).toHaveBeenCalledWith(
+            expect.stringMatching(/\/books\/en\/sb\/1\/2\/3\/index\.html$/)
         );
     });
 });
