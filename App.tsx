@@ -603,6 +603,7 @@ const App: React.FC = () => {
     };
 
     const handleReadFull = async (chunk: SourceChunk) => {
+        console.log("DEBUG: handleReadFull called with chunk:", chunk);
         const lang = settings.language || 'en';
         const bookMap: Record<string, string> = {
             'Srimad-Bhagavatam': 'sb', 'Bhagavad-gita As It Is': 'bg', 'Sri Caitanya-caritamrta': 'cc',
@@ -618,6 +619,7 @@ const App: React.FC = () => {
         };
 
         let bookFolder = bookMap[chunk.bookTitle] || null;
+        console.log("DEBUG: Initial bookFolder lookup:", bookFolder, "for title:", chunk.bookTitle);
         let chapterPath = '';
 
         if (!bookFolder) {
@@ -627,9 +629,19 @@ const App: React.FC = () => {
                     break;
                 }
             }
+            console.log("DEBUG: Fuzzy bookFolder lookup result:", bookFolder);
         }
 
-        if (bookFolder) {
+        const normalizedChapter = chunk.chapter ? String(chunk.chapter).replace(/\\/g, '/') : '';
+        const isPathWithPathSeparator = normalizedChapter.includes('/');
+
+        // LOGIC FIX: Check if chunk.chapter is ALREADY a valid relative path (e.g. "sb/1/2/3/index.html")
+        // This happens with vector search results from faiss_metadata
+        if (bookFolder && normalizedChapter.startsWith(bookFolder + '/')) {
+            console.log("DEBUG: Detected full relative path, using directly:", normalizedChapter);
+            chapterPath = `/books/${lang}/${normalizedChapter}`;
+        } else if (bookFolder) {
+            // Standard Case: "1.2" style numbering
             let chapterSegments: string[] = [];
             if (typeof chunk.chapter === 'string') {
                 chapterSegments = chunk.chapter.split(/[./\\]/).filter(s => s.trim());
@@ -648,12 +660,12 @@ const App: React.FC = () => {
                 chapterPath = `/books/${lang}/${bookFolder}/${chapterUrlPart}/index.html`;
             }
         } else {
-            // Check if chunk.chapter looks like a full path (has Slashes and maybe looks like book/chapter)
-            if (chunk.chapter && typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\'))) {
-                const normalizedPath = chunk.chapter.replace(/\\/g, '/');
-                chapterPath = `/books/${lang}/${normalizedPath}`;
+            // Fallback for when no bookFolder is found but it looks like a path
+            if (isPathWithPathSeparator) {
+                chapterPath = `/books/${lang}/${normalizedChapter}`;
             } else {
                 // Fallback: Show content directly
+                console.log("DEBUG: No book folder found and not a path. Falling back to content display.");
                 setFullTextContent(chunk.content);
                 setFullTextTitle(chunk.bookTitle);
                 setFullTextModalOpen(true);
@@ -677,6 +689,7 @@ const App: React.FC = () => {
         }
 
         const titleSuffix = niceVerse ? `${niceChapter ? niceChapter + '.' : ''}${niceVerse}` : (niceChapter ? `Chapter ${niceChapter}` : '');
+        console.log("DEBUG: Loading full text from:", chapterPath);
         await loadFullText(chapterPath, `${niceBookTitle} ${titleSuffix}`);
     };
 
