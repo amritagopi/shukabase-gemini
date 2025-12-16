@@ -1,4 +1,13 @@
 
+import { TRANSLATIONS } from '../../translations';
+
+export const getBookTitle = (code: string, language: string = 'en') => {
+    // @ts-ignore
+    const books = TRANSLATIONS[language]?.books || TRANSLATIONS['en'].books;
+    const normalizedCode = code.toLowerCase();
+    return books[normalizedCode] || code.toUpperCase();
+};
+
 export const BOOK_MAP: Record<string, string> = {
     'Srimad-Bhagavatam': 'sb', 'Bhagavad-gita As It Is': 'bg', 'Sri Caitanya-caritamrta': 'cc',
     'Nectar of Devotion': 'nod', 'Nectar of Instruction': 'noi', 'Teachings of Lord Caitanya': 'tqk',

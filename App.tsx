@@ -9,7 +9,8 @@ import ToolCardWidget from './ToolCardWidget';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { check } from '@tauri-apps/plugin-updater';
 import { TRANSLATIONS } from './translations';
-import { generateChapterPath } from './src/utils/bookUtils';
+import { generateChapterPath, getBookTitle as getBookTitleUtil } from './src/utils/bookUtils';
+import { useBookReader } from './src/hooks/useBookReader';
 
 const DEFAULT_SETTINGS: AppSettings = {
     apiKey: localStorage.getItem('shukabase_api_key') || '',
@@ -218,10 +219,15 @@ const App: React.FC = () => {
     const [highlightedSourceId, setHighlightedSourceId] = useState<string | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [fullTextModalOpen, setFullTextModalOpen] = useState(false);
-    const [fullTextContent, setFullTextContent] = useState('');
-    const [fullTextTitle, setFullTextTitle] = useState('');
-    const [currentHtmlPath, setCurrentHtmlPath] = useState<string>('');
+
+    const {
+        fullTextModalOpen,
+        setFullTextModalOpen,
+        fullTextContent,
+        fullTextTitle,
+        handleReadFull,
+        handleModalClick
+    } = useBookReader(settings.language as 'en' | 'ru');
 
     // Manual Search State
     const [sidebarMode, setSidebarMode] = useState<'context' | 'search'>('context');
@@ -349,11 +355,7 @@ const App: React.FC = () => {
     };
 
     const getBookTitle = (code: string) => {
-        const lang = settings.language || 'en';
-        // @ts-ignore
-        const books = TRANSLATIONS[lang].books || TRANSLATIONS['en'].books;
-        const normalizedCode = code.toLowerCase();
-        return books[normalizedCode] || code.toUpperCase();
+        return getBookTitleUtil(code, settings.language);
     };
 
     useEffect(() => {
@@ -547,172 +549,7 @@ const App: React.FC = () => {
         }
     };
 
-    const loadFullText = async (path: string, title?: string) => {
-        try {
-            let response = await fetch(path);
-            if (!response.ok) {
-                let fallbackPath = '';
-                if (path.includes('/books/en/')) {
-                    fallbackPath = path.replace('/books/en/', '/books/ru/');
-                } else if (path.includes('/books/ru/')) {
-                    fallbackPath = path.replace('/books/ru/', '/books/en/');
-                }
 
-                if (fallbackPath) {
-                    const fallbackResponse = await fetch(fallbackPath);
-                    if (fallbackResponse.ok) {
-                        response = fallbackResponse;
-                        path = fallbackPath;
-                    }
-                }
-            }
-
-            if (!response.ok) throw new Error(`Failed to load: ${response.statusText}`);
-
-            const htmlContent = await response.text();
-
-            // Check if we got the SPA index.html instead of a book file
-            if (htmlContent.includes('<div id="root">') || htmlContent.includes('<title>SHUKABASE</title>')) {
-                throw new Error("File not found");
-            }
-
-            let contentToDisplay = htmlContent;
-            const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-            if (bodyMatch) contentToDisplay = bodyMatch[1];
-            else {
-                const mainMatch = htmlContent.match(/<main[^>]*>([\s\S]*)<\/main>/i);
-                if (mainMatch) contentToDisplay = mainMatch[1];
-            }
-            contentToDisplay = contentToDisplay.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "");
-
-            let displayTitle = title || '';
-            if (!displayTitle) {
-                const titleMatch = htmlContent.match(/<h1[^>]*>(.*?)<\/h1>/i);
-                if (titleMatch) displayTitle = titleMatch[1].replace(/<[^>]+>/g, '');
-            }
-
-            setFullTextContent(contentToDisplay);
-            setFullTextTitle(displayTitle || 'Text View');
-            setCurrentHtmlPath(path);
-            setFullTextModalOpen(true);
-        } catch (error) {
-            setFullTextContent("Could not load full chapter text. Please try checking the source manually.");
-            setFullTextTitle("Error Loading Text");
-            setFullTextModalOpen(true);
-        }
-    };
-
-    const handleReadFull = async (chunk: SourceChunk) => {
-        console.log("DEBUG: handleReadFull called with chunk:", chunk);
-        const lang = settings.language || 'en';
-        const bookMap: Record<string, string> = {
-            'Srimad-Bhagavatam': 'sb', 'Bhagavad-gita As It Is': 'bg', 'Sri Caitanya-caritamrta': 'cc',
-            'Nectar of Devotion': 'nod', 'Nectar of Instruction': 'noi', 'Teachings of Lord Caitanya': 'tqk',
-            'Sri Isopanisad': 'iso', 'Light of the Bhagavata': 'lob', 'Perfect Questions, Perfect Answers': 'pop',
-            'Path of Perfection': 'pop', 'Science of Self Realization': 'sc', 'Life Comes from Life': 'lcfl',
-            'Krishna Book': 'kb', 'Raja-Vidya': 'rv', 'Beyond Birth and Death': 'bbd',
-            'Civilization and Transcendence': 'ct', 'Krsna Consciousness The Matchless Gift': 'mg',
-            'Easy Journey to Other Planets': 'ej', 'On the Way to Krsna': 'owk', 'Perfection of Yoga': 'poy',
-            'Spiritual Yoga': 'sy', 'Transcendental Teachings of Prahlad Maharaja': 'ttpm',
-            'sb': 'sb', 'bg': 'bg', 'cc': 'cc', 'nod': 'nod', 'noi': 'noi', 'tqk': 'tqk', 'iso': 'iso',
-            'lob': 'lob', 'pop': 'pop', 'sc': 'sc', 'rv': 'rv', 'bbd': 'bbd', 'owk': 'owk', 'poy': 'poy', 'spl': 'spl'
-        };
-
-        let bookFolder = bookMap[chunk.bookTitle] || null;
-        console.log("DEBUG: Initial bookFolder lookup:", bookFolder, "for title:", chunk.bookTitle);
-        let chapterPath = '';
-
-        if (!bookFolder) {
-            for (const [title, folder] of Object.entries(bookMap)) {
-                if (chunk.bookTitle.includes(title) || title.includes(chunk.bookTitle)) {
-                    bookFolder = folder;
-                    break;
-                }
-            }
-            console.log("DEBUG: Fuzzy bookFolder lookup result:", bookFolder);
-        }
-
-        const normalizedChapter = chunk.chapter ? String(chunk.chapter).replace(/\\/g, '/') : '';
-        const isPathWithPathSeparator = normalizedChapter.includes('/');
-
-        // LOGIC FIX: Check if chunk.chapter is ALREADY a valid relative path (e.g. "sb/1/2/3/index.html")
-        // This happens with vector search results from faiss_metadata
-        if (bookFolder && normalizedChapter.startsWith(bookFolder + '/')) {
-            console.log("DEBUG: Detected full relative path, using directly:", normalizedChapter);
-            chapterPath = `/books/${lang}/${normalizedChapter}`;
-        } else if (bookFolder) {
-            // Standard Case: "1.2" style numbering
-            let chapterSegments: string[] = [];
-            if (typeof chunk.chapter === 'string') {
-                chapterSegments = chunk.chapter.split(/[./\\]/).filter(s => s.trim());
-            } else if (chunk.chapter) {
-                chapterSegments = [String(chunk.chapter)];
-            }
-
-            // If chapterSegments is empty (e.g. 0), default to 1?
-            if (chapterSegments.length === 0) chapterSegments = ['1'];
-
-            const chapterUrlPart = chapterSegments.join('/');
-
-            if (chunk.verse) {
-                chapterPath = `/books/${lang}/${bookFolder}/${chapterUrlPart}/${chunk.verse}/index.html`;
-            } else {
-                chapterPath = `/books/${lang}/${bookFolder}/${chapterUrlPart}/index.html`;
-            }
-        } else {
-            // Fallback for when no bookFolder is found but it looks like a path
-            if (isPathWithPathSeparator) {
-                chapterPath = `/books/${lang}/${normalizedChapter}`;
-            } else {
-                // Fallback: Show content directly
-                console.log("DEBUG: No book folder found and not a path. Falling back to content display.");
-                setFullTextContent(chunk.content);
-                setFullTextTitle(chunk.bookTitle);
-                setFullTextModalOpen(true);
-                return;
-            }
-        }
-
-        const niceBookTitle = getBookTitle(chunk.bookTitle);
-        let niceChapter = chunk.chapter;
-        let niceVerse = chunk.verse;
-
-        if (typeof chunk.chapter === 'string' && (chunk.chapter.includes('/') || chunk.chapter.includes('\\'))) {
-            const parts = chunk.chapter.replace(/\\/g, '/').split('/');
-            if (parts.length >= 2) {
-                const numbers = parts.filter(p => /^\d+$/.test(p));
-                if (numbers.length >= 2) {
-                    niceChapter = numbers[numbers.length - 2];
-                    niceVerse = numbers[numbers.length - 1];
-                }
-            }
-        }
-
-        const titleSuffix = niceVerse ? `${niceChapter ? niceChapter + '.' : ''}${niceVerse}` : (niceChapter ? `Chapter ${niceChapter}` : '');
-        console.log("DEBUG: Loading full text from:", chapterPath);
-        await loadFullText(chapterPath, `${niceBookTitle} ${titleSuffix}`);
-    };
-
-    const handleModalClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        e.stopPropagation();
-        const target = e.target as HTMLElement;
-        const anchor = target.closest('a');
-        if (anchor && anchor.href) {
-            const href = anchor.getAttribute('href');
-            if (href && !href.startsWith('http') && !href.startsWith('#')) {
-                e.preventDefault();
-                const currentDir = currentHtmlPath.substring(0, currentHtmlPath.lastIndexOf('/'));
-                const parts = currentDir.split('/');
-                const relativeParts = href.split('/');
-                for (const part of relativeParts) {
-                    if (part === '.') continue;
-                    if (part === '..') parts.pop();
-                    else parts.push(part);
-                }
-                loadFullText(parts.join('/'));
-            }
-        }
-    };
 
     const toggleLanguage = () => {
         setSettings(prev => ({ ...prev, language: prev.language === 'en' ? 'ru' : 'en' }));
@@ -991,6 +828,7 @@ const App: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => setSidebarMode('search')}
+                                data-testid="manual-search-tab"
                                 className={`relative flex-1 py-4 text-sm font-medium transition-colors ${sidebarMode === 'search' ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'}`}
                             >
                                 {t('manualSearch')}
@@ -1067,6 +905,7 @@ const App: React.FC = () => {
                                         onChange={(e) => setManualSearchQuery(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleManualSearch()}
                                         placeholder={t('searchPlaceholder')}
+                                        data-testid="manual-search-input"
                                         className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-4 pr-10 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-cyan-500/50 focus:outline-none placeholder-slate-500 backdrop-blur-sm"
                                     />
                                     <button
