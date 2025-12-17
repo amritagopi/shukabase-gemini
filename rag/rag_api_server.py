@@ -10,7 +10,8 @@
     python rag/rag_api_server.py
 """
 
-from flask import Flask, request, jsonify
+import flask
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import logging
 import sys
@@ -378,6 +379,22 @@ def delete_conversation(conversation_id):
         os.remove(filepath)
         return jsonify({'success': True})
     return jsonify({'error': 'Not found'}), 404
+
+@app.route('/books/<path:filename>')
+def serve_books(filename):
+    try:
+        # DATA_DIR typically contains the 'books' folder if extracted correctly
+        # We serve directly from DATA_DIR to handle /books/en/... structure
+        # If the request is /books/en/sb/1/index.html, filename will be en/sb/1/index.html
+        # So we look in DATA_DIR/books/filename
+        books_dir = os.path.join(DATA_DIR, 'books')
+        if not os.path.exists(books_dir):
+             # Fallback: maybe DATA_DIR IS the books dir?
+             pass
+        return flask.send_from_directory(books_dir, filename)
+    except Exception as e:
+        logger.error(f"Error serving book file {filename}: {e}")
+        return jsonify({'error': 'File not found'}), 404
 
 if __name__ == '__main__':
     logger.info("="*80)

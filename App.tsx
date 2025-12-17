@@ -227,7 +227,7 @@ const App: React.FC = () => {
         fullTextTitle,
         handleReadFull,
         handleModalClick
-    } = useBookReader(settings.language as 'en' | 'ru');
+    } = useBookReader(settings.language as 'en' | 'ru', settings.backendUrl ? settings.backendUrl.replace('/api/search', '').replace(/\/api$/, '') : 'http://localhost:5000');
 
     // Manual Search State
     const [sidebarMode, setSidebarMode] = useState<'context' | 'search'>('context');

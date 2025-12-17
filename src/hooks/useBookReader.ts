@@ -9,7 +9,7 @@ export interface BookReaderState {
     currentHtmlPath: string;
 }
 
-export const useBookReader = (language: 'en' | 'ru') => {
+export const useBookReader = (language: 'en' | 'ru', backendUrl: string = 'http://localhost:5000') => {
     const [state, setState] = useState<BookReaderState>({
         fullTextModalOpen: false,
         fullTextContent: '',
@@ -21,7 +21,12 @@ export const useBookReader = (language: 'en' | 'ru') => {
 
     const loadFullText = async (path: string, title?: string) => {
         try {
-            let response = await fetch(path);
+            // Construct full URL if path is relative (starts with /books)
+            const fetchUrl = path.startsWith('/books/') && !path.startsWith('http')
+                ? `${backendUrl}${path}`
+                : path;
+
+            let response = await fetch(fetchUrl);
             if (!response.ok) {
                 let fallbackPath = '';
                 if (path.includes('/books/en/')) {
