@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
-hidden_imports = []
+hidden_imports = ['sentry_sdk']
 datas = []
 binaries = []
 

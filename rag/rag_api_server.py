@@ -24,16 +24,6 @@ import threading
 import time
 from pathlib import Path
 
-# --- Sentry Integration ---
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
-
-sentry_sdk.init(
-    dsn="https://f45f0c9e6cba5042d563be0d77a1b6ca@o4509290473324544.ingest.de.sentry.io/4510551312040016",
-    integrations=[FlaskIntegration()],
-    send_default_pii=True
-)
-
 # --- Настройка логгирования (СРАЗУ) ---
 # Определяем путь к логам до всего остального
 APP_NAME = "Shukabase"
@@ -63,6 +53,22 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# --- Sentry Integration (Safe) ---
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+
+    sentry_sdk.init(
+        dsn="https://f45f0c9e6cba5042d563be0d77a1b6ca@o4509290473324544.ingest.de.sentry.io/4510551312040016",
+        integrations=[FlaskIntegration()],
+        send_default_pii=True
+    )
+    logger.info("✅ Sentry initialized")
+except ImportError:
+    logger.warning("⚠️ Sentry SDK not found - usage tracking disabled")
+except Exception as e:
+    logger.warning(f"⚠️ Sentry init failed: {e}")
 
 # --- Добавляем корень проекта в sys.path ---
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
