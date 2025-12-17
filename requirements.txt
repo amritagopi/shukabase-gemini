@@ -21,3 +21,4 @@ packaging
 typing_extensions
 pyinstaller
 einops
+sentry-sdk[flask]

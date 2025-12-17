@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { Send, Settings, BookOpen, Database, AlertCircle, Scroll, Globe, Sparkles, Server, X, Search, Download, Heart, ArrowRight } from 'lucide-react';
 import { Message, SourceChunk, AppSettings, Conversation, ConversationHeader, AgentStep } from './types';
 import { generateRAGResponse, getConversations, getConversation, saveConversation, searchScriptures } from './services/geminiService';
@@ -21,6 +22,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     provider: (localStorage.getItem('shukabase_provider') as 'google' | 'openrouter') || 'google',
     openrouterApiKey: localStorage.getItem('shukabase_openrouter_api_key') || '',
     openrouterModel: localStorage.getItem('shukabase_openrouter_model') || 'z-ai/glm-4.5-air:free',
+    telemetryEnabled: localStorage.getItem('shukabase_telemetry_enabled') !== 'false', // Default true
 };
 
 // --- Setup Wizard Component ---
@@ -171,6 +173,36 @@ const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
                             </div>
                         </div>
 
+                        {/* Telemetry Setting */}
+                        <div className="mb-6 pb-6 border-b border-white/5">
+                            <h3 className="text-white/90 text-sm font-medium mb-3 flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-cyan-400" />
+                                {settings.language === 'ru' ? 'Телеметрия' : 'Telemetry'}
+                            </h3>
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.telemetryEnabled}
+                                        onChange={(e) => {
+                                            const enabled = e.target.checked;
+                                            setSettings(prev => ({ ...prev, telemetryEnabled: enabled }));
+                                            localStorage.setItem('shukabase_telemetry_enabled', String(enabled));
+                                        }}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-10 h-6 bg-white/5 rounded-full peer-checked:bg-cyan-500/20 transition-colors border border-white/10 peer-checked:border-cyan-500/50"></div>
+                                    <div className="absolute left-1 top-1 w-4 h-4 bg-white/40 peer-checked:bg-cyan-400 rounded-full transition-all peer-checked:translate-x-4"></div>
+                                </div>
+                                <span className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
+                                    {settings.language === 'ru'
+                                        ? 'Отправлять анонимную статистику использования (помогает улучшать приложение)'
+                                        : 'Send anonymous usage statistics (helps improve the app)'}
+                                </span>
+                            </label>
+                        </div>
+
+                        {/* Provider Selection */}
                         {error && (
                             <div className="bg-red-900/20 border border-red-500/30 text-red-200 p-4 rounded-lg text-sm text-center">
                                 <p className="mb-2">Error: {error}</p>
@@ -244,6 +276,12 @@ const App: React.FC = () => {
     const [agentThought, setAgentThought] = useState('');
     const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // Sync telemetry state with Rust backend
+        invoke('set_telemetry_enabled', { enabled: settings.telemetryEnabled })
+            .catch(e => console.error("Failed to sync telemetry state:", e));
+    }, [settings.telemetryEnabled]);
 
     const scrollToBottom = () => {
         if (chatContainerRef.current) {
@@ -991,15 +1029,15 @@ const App: React.FC = () => {
             {
                 isSettingsOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setIsSettingsOpen(false)}>
-                        <div className="glass-panel border border-slate-700/50 rounded-2xl w-full max-w-md shadow-2xl bg-black/60 backdrop-blur-xl" onClick={(e) => e.stopPropagation()}>
-                            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+                        <div className="glass-panel border border-slate-700/50 rounded-2xl w-full max-w-[400px] max-h-[85vh] shadow-2xl bg-black/60 backdrop-blur-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+                            <div className="p-4 border-b border-slate-800 flex justify-between items-center shrink-0">
                                 <h3 className="font-bold text-lg text-slate-100 glow-text-cyan">{t('settings')}</h3>
-                                <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-white">
+                                <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-white transition-colors">
                                     <X size={20} />
                                 </button>
                             </div>
 
-                            <div className="p-6 space-y-6">
+                            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                                 <div className="space-y-4 border-b border-slate-700/50 pb-6 mb-6">
                                     <label className="text-sm font-medium text-slate-300">{t('aiProvider')}</label>
                                     <div className="grid grid-cols-2 gap-2">
@@ -1126,6 +1164,36 @@ const App: React.FC = () => {
                                         </div>
                                     </div>
                                 )}
+
+
+                                {/* Telemetry Setting */}
+                                <div className="pt-6 border-t border-slate-700/50">
+                                    <h3 className="text-white/90 text-sm font-medium mb-3 flex items-center gap-2">
+                                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                                        {settings.language === 'ru' ? 'Телеметрия' : 'Telemetry'}
+                                    </h3>
+                                    <label className="flex items-center gap-3 cursor-pointer group">
+                                        <div className="relative">
+                                            <input
+                                                type="checkbox"
+                                                checked={settings.telemetryEnabled}
+                                                onChange={(e) => {
+                                                    const enabled = e.target.checked;
+                                                    setSettings(prev => ({ ...prev, telemetryEnabled: enabled }));
+                                                    localStorage.setItem('shukabase_telemetry_enabled', String(enabled));
+                                                }}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-10 h-6 bg-white/5 rounded-full peer-checked:bg-cyan-500/20 transition-colors border border-white/10 peer-checked:border-cyan-500/50"></div>
+                                            <div className="absolute left-1 top-1 w-4 h-4 bg-white/40 peer-checked:bg-cyan-400 rounded-full transition-all peer-checked:translate-x-4"></div>
+                                        </div>
+                                        <span className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
+                                            {settings.language === 'ru'
+                                                ? 'Отправлять анонимную статистику использования (помогает улучшать приложение)'
+                                                : 'Send anonymous usage statistics (helps improve the app)'}
+                                        </span>
+                                    </label>
+                                </div>
 
                                 <div className="pt-6 border-t border-slate-700/50 text-center space-y-3">
                                     <p className="text-sm text-cyan-200/80 font-medium leading-relaxed">

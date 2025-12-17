@@ -52,5 +52,14 @@
         ]
       }
     }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/amritagopi/shukabase-gemini/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFFREUwMDE0RUQyMzkyQjkKUldTNWtpUHRGQURlSGg1WjdPMzNTRGxCMHY4SXN1OU0ySzM2NlkvNUhPSTM5bTZEaXEvc1ZPYVcK"
+    }
   }
 }

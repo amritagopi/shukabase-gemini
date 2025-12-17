@@ -9,18 +9,31 @@ use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
+use tauri_plugin_aptabase::EventTracker;
+use dotenvy_macro::dotenv;
+
 struct AppState {
     _python_process: Mutex<Option<Child>>,
+    telemetry_enabled: Mutex<bool>,
+}
+
+#[tauri::command]
+fn set_telemetry_enabled(state: tauri::State<AppState>, enabled: bool) {
+    let mut telemetry = state.telemetry_enabled.lock().unwrap();
+    *telemetry = enabled;
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   let state = AppState {
       _python_process: Mutex::new(None),
+      telemetry_enabled: Mutex::new(true), // Default to true
   };
 
   tauri::Builder::default()
+    .plugin(tauri_plugin_aptabase::Builder::new(dotenv!("APTABASE_KEY")).build())
     .manage(state)
+    .invoke_handler(tauri::generate_handler![set_telemetry_enabled])
     .setup(|app| {
       // 1. Initialize Logger (Always active for diagnostics)
       // We ignore errors here because if logging fails, we can't do much, but we don't want to crash.
@@ -163,6 +176,28 @@ pub fn run() {
             }
         }
     })
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    .build(tauri::generate_context!())
+    .expect("error when building tauri app")
+    .run(|handler, event| {
+        let state = handler.state::<AppState>();
+        let telemetry = *state.telemetry_enabled.lock().unwrap();
+
+        match event {
+            tauri::RunEvent::Exit { .. } => {
+                if telemetry {
+                    let _ = handler.track_event("app_exited", None);
+                    handler.flush_events_blocking();
+                }
+            }
+            tauri::RunEvent::Ready { .. } => {
+                // app_started might fire before frontend sets state to false, 
+                // so it assumes default true. 
+                // To fix this fully requires persistance in Rust, but this is a good first step.
+                if telemetry {
+                    let _ = handler.track_event("app_started", None);
+                }
+            }
+            _ => {}
+        }
+    });
 }

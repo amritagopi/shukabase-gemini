@@ -43,6 +43,7 @@ export interface AppSettings {
   provider: 'google' | 'openrouter';
   openrouterApiKey: string;
   openrouterModel: string;
+  telemetryEnabled: boolean;
 }
 
 export interface ConversationHeader {
