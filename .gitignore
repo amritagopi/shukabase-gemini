@@ -191,3 +191,6 @@ rag_data/
 !src-tauri/tauri.conf.json
 !src-tauri/capabilities/default.json
 
+builds/data_archives/shukabase_data_multilingual.zip
+builds/data_archives/shukabase_data_en.zip
+builds/data_archives/shukabase_data_ru.zip

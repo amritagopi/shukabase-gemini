@@ -98,9 +98,9 @@ setup_state = {
 
 # --- Ссылки на данные (GitHub Releases) ---
 DATA_URLS = {
-    'all': "https://github.com/amritagopi/shukabase-install-data/releases/download/data/shukabase_data_multilingual.zip",
-    'ru': "https://github.com/amritagopi/shukabase-install-data/releases/download/data/shukabase_data_ru.zip",
-    'en': "https://github.com/amritagopi/shukabase-install-data/releases/download/data/shukabase_data_en.zip"
+    'all': "https://github.com/amritagopi/shukabase-gemini/releases/download/data-v2/shukabase_data_multilingual.zip",
+    'ru': "https://github.com/amritagopi/shukabase-gemini/releases/download/data-v2/shukabase_data_ru.zip",
+    'en': "https://github.com/amritagopi/shukabase-gemini/releases/download/data-v2/shukabase_data_en.zip"
 }
 
 # --- Функции для скачивания данных ---
