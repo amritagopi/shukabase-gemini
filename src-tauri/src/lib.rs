@@ -10,7 +10,7 @@ use std::os::windows::process::CommandExt;
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 use tauri_plugin_aptabase::EventTracker;
-use dotenvy_macro::dotenv;
+
 
 struct AppState {
     _python_process: Mutex<Option<Child>>,
@@ -31,7 +31,7 @@ pub fn run() {
   };
 
   tauri::Builder::default()
-    .plugin(tauri_plugin_aptabase::Builder::new(dotenv!("APTABASE_KEY")).build())
+    .plugin(tauri_plugin_aptabase::Builder::new(std::env!("APTABASE_KEY")).build())
     .manage(state)
     .invoke_handler(tauri::generate_handler![set_telemetry_enabled])
     .setup(|app| {

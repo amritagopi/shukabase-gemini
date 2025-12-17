@@ -120,6 +120,7 @@ jobs:
         env:
           SHUKABASE_LANG: ${{ matrix.language }}
           SHUKABASE_DATA_ID: ${{ matrix.data_id }}
+          APTABASE_KEY: ${{ secrets.APTABASE_KEY }}
           CI: true
         shell: bash
         run: |
