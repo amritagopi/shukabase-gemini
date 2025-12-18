@@ -26,7 +26,11 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 // --- Setup Wizard Component ---
-const SetupScreen = ({ onComplete }: { onComplete: () => void }) => {
+const SetupScreen = ({ onComplete, settings, setSettings }: {
+    onComplete: () => void,
+    settings: AppSettings,
+    setSettings: React.Dispatch<React.SetStateAction<AppSettings>>
+}) => {
     const [step, setStep] = useState<'lang' | 'download'>('lang');
     const [progress, setProgress] = useState(0);
     const [status, setStatus] = useState('idle');
@@ -632,7 +636,7 @@ const App: React.FC = () => {
     }
 
     if (appMode === 'setup') {
-        return <SetupScreen onComplete={() => setAppMode('chat')} />;
+        return <SetupScreen onComplete={() => setAppMode('chat')} settings={settings} setSettings={setSettings} />;
     }
 
     return (
