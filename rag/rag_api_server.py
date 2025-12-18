@@ -393,6 +393,38 @@ def serve_books(filename):
         logger.error(f"Error serving book file {filename}: {e}")
         return jsonify({'error': 'File not found'}), 404
 
+@app.route('/api/setup/reset', methods=['POST'])
+def reset_app_data():
+    """Полный сброс данных приложения (удаляет базу и историю чатов)"""
+    try:
+        logger.warning("⚠️ RECEIVED FACTORY RESET REQUEST ⚠️")
+        
+        # 1. Reset Setup State
+        global setup_state, rag_engine_instance
+        setup_state = {
+            "is_downloading": False,
+            "progress": 0,
+            "status": "idle",
+            "error": None,
+            "current_file": ""
+        }
+        rag_engine_instance = None # Drop engine ref
+        
+        # 2. Delete DATA_DIR
+        if os.path.exists(DATA_DIR):
+            logger.info(f"Removing DATA_DIR: {DATA_DIR}")
+            shutil.rmtree(DATA_DIR, ignore_errors=True)
+            
+        # 3. Delete CHAT_HISTORY_DIR
+        if os.path.exists(CHAT_HISTORY_DIR):
+            logger.info(f"Removing CHAT_HISTORY_DIR: {CHAT_HISTORY_DIR}")
+            shutil.rmtree(CHAT_HISTORY_DIR, ignore_errors=True)
+            
+        return jsonify({'success': True, 'message': 'App data reset successfully. Please restart.'})
+    except Exception as e:
+        logger.error(f"Reset failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     logger.info("="*80)
     logger.info(f"🚀 Shukabase AI Server Starting. Data dir: {DATA_DIR}")

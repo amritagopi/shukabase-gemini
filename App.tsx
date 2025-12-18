@@ -1195,6 +1195,34 @@ const App: React.FC = () => {
                                     </label>
                                 </div>
 
+                                {/* Reset App Button */}
+                                <div className="pt-6 border-t border-slate-700/50">
+                                    <h3 className="text-white/90 text-sm font-medium mb-3 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                                        {settings.language === 'ru' ? 'Сброс приложения' : 'Reset Application'}
+                                    </h3>
+                                    <button
+                                        onClick={async () => {
+                                            if (confirm(settings.language === 'ru'
+                                                ? 'Это удалит все скачанные данные и историю чатов. Приложение закроется. Вы уверены?'
+                                                : 'This will delete all data and chat history. The app will close. Are you sure?')) {
+                                                try {
+                                                    await fetch('http://localhost:5000/api/setup/reset', { method: 'POST' });
+                                                    alert(settings.language === 'ru' ? 'Данные очищены. Пожалуйста, перезапустите приложение.' : 'Data reset. Please restart the app.');
+                                                    window.close(); // Try to close window
+                                                } catch (e) {
+                                                    alert('Error resetting app: ' + e);
+                                                }
+                                            }
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/40 transition-all duration-300 group"
+                                    >
+                                        <span className="font-medium">
+                                            {settings.language === 'ru' ? 'Сбросить все данные' : 'Reset All Data'}
+                                        </span>
+                                    </button>
+                                </div>
+
                                 <div className="pt-6 border-t border-slate-700/50 text-center space-y-3">
                                     <p className="text-sm text-cyan-200/80 font-medium leading-relaxed">
                                         {t('settingsFooterText')}
