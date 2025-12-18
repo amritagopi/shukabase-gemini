@@ -120,12 +120,15 @@ pub fn run() {
                   let stderr = child.stderr.take().expect("Failed to capture stderr");
 
                   // Spawn a thread to read stderr and print it (for debugging)
+                  let app_handle_err = app_handle.clone();
                   thread::spawn(move || {
                       let reader = BufReader::new(stderr);
                       for line in reader.lines() {
                           if let Ok(line) = line {
                                eprintln!("[BACKEND_ERR]: {}", line);
                                log::error!("[BACKEND_ERR]: {}", line);
+                               // Emitting this helps see it in the dev console if splash is open
+                               let _ = app_handle_err.emit("backend-error", line.clone());
                           }
                       }
                   });
