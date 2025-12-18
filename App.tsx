@@ -91,13 +91,17 @@ const SetupScreen = ({ onComplete, settings, setSettings }: {
                     <h1 className="text-3xl font-bold glow-text-cyan mb-2">
                         Shukabase AI
                     </h1>
-                    <p className="text-slate-400 text-sm">First Run Setup</p>
+                    <p className="text-slate-400 text-sm">
+                        {settings.language === 'ru' ? 'Первоначальная настройка' : 'First Run Setup'}
+                    </p>
                 </div>
 
                 {step === 'lang' ? (
                     <div className="space-y-4">
                         <p className="text-center text-slate-300 mb-6 text-sm">
-                            Please select your preferred language pack to download the knowledge base.
+                            {settings.language === 'ru'
+                                ? 'Пожалуйста, выберите языковой пакет для загрузки базы знаний.'
+                                : 'Please select your preferred language pack to download the knowledge base.'}
                         </p>
 
                         <div className="grid grid-cols-1 gap-3">
@@ -120,18 +124,35 @@ const SetupScreen = ({ onComplete, settings, setSettings }: {
                                         <span>English Language Pack</span>
                                     </button>
                                 ) : (
-                                    <button
-                                        onClick={() => startDownload('all')}
-                                        className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
-                                    >
-                                        <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
-                                        <span>Multilingual (RU + EN)</span>
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={() => startDownload('ru')}
+                                            className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
+                                        >
+                                            <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                            <span>{settings.language === 'ru' ? 'Русский язык' : 'Russian Language'}</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => startDownload('en')}
+                                            className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
+                                        >
+                                            <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                            <span>{settings.language === 'ru' ? 'Английский язык' : 'English Language'}</span>
+                                        </button>
+                                        <button
+                                            onClick={() => startDownload('all')}
+                                            className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 rounded-lg font-medium text-slate-200 transition-all flex items-center justify-center gap-3 group"
+                                        >
+                                            <Globe className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                            <span>{settings.language === 'ru' ? 'Мультиязычный (RU + EN)' : 'Multilingual (RU + EN)'}</span>
+                                        </button>
+                                    </>
                                 )}
                         </div>
 
                         <p className="text-[10px] text-center text-slate-500 mt-4">
-                            Size: ~500MB. Requires internet connection.
+                            {settings.language === 'ru' ? 'Размер: ~500MB. Требуется интернет.' : 'Size: ~500MB. Requires internet connection.'}
                         </p>
                     </div>
                 ) : (
@@ -1199,33 +1220,7 @@ const App: React.FC = () => {
                                     </label>
                                 </div>
 
-                                {/* Reset App Button */}
-                                <div className="pt-6 border-t border-slate-700/50">
-                                    <h3 className="text-white/90 text-sm font-medium mb-3 flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
-                                        {settings.language === 'ru' ? 'Сброс приложения' : 'Reset Application'}
-                                    </h3>
-                                    <button
-                                        onClick={async () => {
-                                            if (confirm(settings.language === 'ru'
-                                                ? 'Это удалит все скачанные данные и историю чатов. Приложение закроется. Вы уверены?'
-                                                : 'This will delete all data and chat history. The app will close. Are you sure?')) {
-                                                try {
-                                                    await fetch('http://localhost:5000/api/setup/reset', { method: 'POST' });
-                                                    alert(settings.language === 'ru' ? 'Данные очищены. Пожалуйста, перезапустите приложение.' : 'Data reset. Please restart the app.');
-                                                    window.close(); // Try to close window
-                                                } catch (e) {
-                                                    alert('Error resetting app: ' + e);
-                                                }
-                                            }
-                                        }}
-                                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/40 transition-all duration-300 group"
-                                    >
-                                        <span className="font-medium">
-                                            {settings.language === 'ru' ? 'Сбросить все данные' : 'Reset All Data'}
-                                        </span>
-                                    </button>
-                                </div>
+
 
                                 <div className="pt-6 border-t border-slate-700/50 text-center space-y-3">
                                     <p className="text-sm text-cyan-200/80 font-medium leading-relaxed">
