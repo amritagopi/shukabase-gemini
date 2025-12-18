@@ -9,6 +9,7 @@
     "core:default",
     "opener:default",
     "aptabase:default",
-    "updater:default"
+    "updater:default",
+    "core:devtools"
   ]
 }

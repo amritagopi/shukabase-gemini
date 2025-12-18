@@ -119,6 +119,41 @@ DATA_URLS = {
     'en': "https://github.com/amritagopi/shukabase-gemini/releases/download/data-v2/shukabase_data_en.zip"
 }
 
+def initialize_engine():
+    """Initializes the RAG engine if data exists."""
+    global rag_engine_instance
+    
+    with init_lock:
+        if rag_engine_instance is not None:
+            return True
+
+        if not os.path.exists(DATA_DIR):
+            logger.info(f"Data directory not found at {DATA_DIR}. Engine will not be initialized.")
+            return False
+
+        # Check for essential files before trying to load (avoid crash in constructor)
+        # We need at least one index file to consider it loadable
+        has_index = any(f.startswith("faiss_index_") for f in os.listdir(DATA_DIR))
+        if not has_index:
+             logger.info("No index files found in data directory. Waiting for download.")
+             return False
+
+        try:
+            logger.info(f"Initializing RAGEngine from {DATA_DIR}...")
+            
+            if RAGEngine is None:
+                logger.critical("Cannot initialize engine: RAGEngine class is missing (import failed).")
+                return False
+                
+            # Initialize with our data directory
+            rag_engine_instance = RAGEngine(base_dir=DATA_DIR)
+            
+            logger.info("✅ RAGEngine initialized successfully!")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize RAGEngine: {e}", exc_info=True)
+            return False
+
 def download_file_direct(url, destination):
     session = requests.Session()
     logger.info(f"Downloading from: {url}")
@@ -430,10 +465,33 @@ if __name__ == '__main__':
     logger.info("="*80)
     logger.info(f"🚀 Shukabase AI Server Starting. Data dir: {DATA_DIR}")
     
-    # ВАЖНО: Выводим этот статус, чтобы Rust понял, что сервер жив
-    print("STATUS: SERVER_STARTED", flush=True)
+    # --- CRASH HANDLER & STDERR REDIRECT ---
+    # Redirect stderr to file so we see crashes (like NameErrors) in the log file
+    # This is critical for frozen apps where console is hidden
+    class StderrLogger:
+        def write(self, message):
+            if message.strip():
+                logger.error(f"STDERR: {message.strip()}")
+            sys.__stderr__.write(message) # Keep writing to original stderr for Rust capture
+        def flush(self):
+            sys.__stderr__.flush()
+            
+    sys.stderr = StderrLogger()
 
-    # Инициализируем в фоне, чтобы не задерживать старт сервера и сплэша
-    threading.Thread(target=initialize_engine, daemon=True).start()
-    
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    try:
+        # ВАЖНО: Выводим этот статус, чтобы Rust понял, что сервер жив
+        print("STATUS: SERVER_STARTED", flush=True)
+
+        # Инициализируем в фоне, чтобы не задерживать старт сервера и сплэша
+        threading.Thread(target=initialize_engine, daemon=True).start()
+        
+        app.run(host='0.0.0.0', port=5000, debug=False)
+    except Exception as e:
+        logger.critical(f"🔥 SERVER CRASHED: {e}", exc_info=True)
+        # Также пишем в отдельный файл на случай если логгер умер
+        try:
+            with open(os.path.join(log_dir, "crash.txt"), "w") as f:
+                f.write(f"CRASH: {e}")
+        except:
+            pass
+        raise e
